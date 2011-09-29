@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Text;
 
-namespace BzReader
+namespace WikipediaConv
 {
     /// <summary>
     /// The class encapsulates the list of the index hits

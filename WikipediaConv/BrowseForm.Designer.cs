@@ -1,4 +1,4 @@
-namespace BzReader
+namespace WikipediaConv
 {
     partial class BrowseForm
     {
@@ -140,7 +140,7 @@ namespace BzReader
             // 
             // splitContainer1
             // 
-            splitContainer1.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::BzReader.Properties.Settings.Default, "SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            splitContainer1.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::WikipediaConv.Properties.Settings.Default, "SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             resources.ApplyResources(splitContainer1, "splitContainer1");
             splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             splitContainer1.Name = "splitContainer1";
@@ -152,7 +152,7 @@ namespace BzReader
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(this.webBrowser);
-            splitContainer1.SplitterDistance = global::BzReader.Properties.Settings.Default.SplitterDistance;
+            splitContainer1.SplitterDistance = global::WikipediaConv.Properties.Settings.Default.SplitterDistance;
             // 
             // hitsBox
             // 

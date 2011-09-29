@@ -19,7 +19,7 @@ using Lucene.Net.Search;
 using RAMDirectory = Lucene.Net.Store.RAMDirectory;
 using FSDirectory = Lucene.Net.Store.FSDirectory;
 
-namespace BzReader
+namespace WikipediaConv
 {
     public class Indexer
     {

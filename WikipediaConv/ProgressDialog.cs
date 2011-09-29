@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace BzReader
+namespace WikipediaConv
 {
     public partial class ProgressDialog : Form
     {

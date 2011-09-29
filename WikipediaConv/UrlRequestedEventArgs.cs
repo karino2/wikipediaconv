@@ -4,7 +4,7 @@ using System.Collections.Specialized;
 using System.Text;
 using System.Web;
 
-namespace BzReader
+namespace WikipediaConv
 {
     /// <summary>
     /// The delegate for the UrlRequested event

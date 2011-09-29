@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace BzReader
+namespace WikipediaConv
 {
     public static class MimeTeX
     {

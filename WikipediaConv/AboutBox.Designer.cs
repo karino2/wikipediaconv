@@ -1,4 +1,4 @@
-namespace BzReader
+namespace WikipediaConv
 {
     partial class AboutBox
     {

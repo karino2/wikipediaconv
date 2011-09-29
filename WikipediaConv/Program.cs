@@ -4,7 +4,7 @@ using System.Windows.Forms;
 using System.Globalization;
 using System.Threading;
 
-namespace BzReader
+namespace WikipediaConv
 {
     static class Program
     {

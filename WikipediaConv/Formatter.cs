@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Diagnostics;
-using BzReader;
+using WikipediaConv;
 
 namespace ScrewTurn.Wiki
 {
@@ -236,7 +236,7 @@ namespace ScrewTurn.Wiki
 						sb.Insert(match.Index, GenerateList(match.Value.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries), 0, 0, ref d) + "\n");
 					}
 					catch {
-						sb.Insert(match.Index, BzReader.Properties.Resources.FormatterErrorMalformedList);
+						sb.Insert(match.Index, WikipediaConv.Properties.Resources.FormatterErrorMalformedList);
 					}
 				}
 				ComputeNoWiki(sb.ToString(), ref noWikiBegin, ref noWikiEnd);
@@ -1247,7 +1247,7 @@ namespace ScrewTurn.Wiki
 			// Proceed line-by-line, ignoring the first and last one
 			string[] lines = table.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 			if(lines.Length < 3) {
-				return BzReader.Properties.Resources.FormatterErrorMalformedTable;
+				return WikipediaConv.Properties.Resources.FormatterErrorMalformedTable;
 			}
 			StringBuilder sb = new StringBuilder();
 			sb.Append("<table");

@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Reflection;
 
-namespace BzReader
+namespace WikipediaConv
 {
     partial class AboutBox : Form
     {
@@ -17,11 +17,11 @@ namespace BzReader
             //  Change assembly information settings for your application through either:
             //  - Project->Properties->Application->Assembly Information
             //  - AssemblyInfo.cs
-            this.Text = String.Format(Properties.Resources.AboutProduct, BzReader.Properties.Resources.BzReader);
-            this.labelProductName.Text = BzReader.Properties.Resources.BzReader;
+            this.Text = String.Format(Properties.Resources.AboutProduct, WikipediaConv.Properties.Resources.BzReader);
+            this.labelProductName.Text = WikipediaConv.Properties.Resources.BzReader;
             this.labelVersion.Text = String.Format(Properties.Resources.AboutVersion, AssemblyVersion);
-            this.labelCopyright.Text = BzReader.Properties.Resources.ProductLicense;
-            this.textBoxDescription.Text = BzReader.Properties.Resources.ProductDescription;
+            this.labelCopyright.Text = WikipediaConv.Properties.Resources.ProductLicense;
+            this.textBoxDescription.Text = WikipediaConv.Properties.Resources.ProductDescription;
         }
 
         public string AssemblyVersion

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace BzReader
+namespace WikipediaConv
 {
     public partial class BrowseForm : Form
     {

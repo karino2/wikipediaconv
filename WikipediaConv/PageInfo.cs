@@ -6,7 +6,7 @@ using Lucene.Net.Documents;
 using Lucene.Net.Search;
 using ScrewTurn.Wiki;
 
-namespace BzReader
+namespace WikipediaConv
 {
     public class PageInfo
     {

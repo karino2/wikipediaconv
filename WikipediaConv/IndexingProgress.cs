@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BzReader
+namespace WikipediaConv
 {
     /// <summary>
     /// The state of the indexing process

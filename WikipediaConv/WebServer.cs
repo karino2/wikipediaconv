@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Web;
 
-namespace BzReader
+namespace WikipediaConv
 {
     /// <summary>
     /// Serves the HTTP content back to IE control
