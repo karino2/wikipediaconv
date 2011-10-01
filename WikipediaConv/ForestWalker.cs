@@ -5,7 +5,8 @@ using System.Text;
 
 namespace WikipediaConv
 {
-    class ForestWalker<E> where E : class
+    class ForestWalker<E> : IEnumerator<ForestNode<E>> 
+        where E : class
     {
         ForestNode<E> _root;
         ForestNode<E> _current;
@@ -30,7 +31,7 @@ namespace WikipediaConv
             _current = _current.NewEdge(ForestNode < E >.Edge.Trailing);
         }
 
-        public ForestNode<E> Next()
+        private ForestNode<E> Next()
         {
             if (_current == null)
             {
@@ -61,5 +62,31 @@ namespace WikipediaConv
             return _current;
         }
 
+        public ForestNode<E> Current
+        {
+            get { return _current; }
+        }
+
+        public void Dispose()
+        {
+        }
+
+        object System.Collections.IEnumerator.Current
+        {
+            get { return _current; }
+        }
+
+        public bool MoveNext()
+        {
+            if (!HasNext)
+                return false;
+            Next();
+            return true;
+        }
+
+        public void Reset()
+        {
+            _current = _root;
+        }
     }
 }

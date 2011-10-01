@@ -49,37 +49,37 @@ namespace WikipediaConvTest
 
              ForestWalker<TreeForTest> walker = new ForestWalker<TreeForTest>(root);
 
-             Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Leading, a, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Leading, a, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Leading, b, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Leading, b, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Leading, d, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Leading, d, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Trailing, d, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Trailing, d, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Leading, e, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Leading, e, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Trailing, e, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Trailing, e, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Trailing, b, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Trailing, b, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Leading, c, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Leading, c, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Trailing, c, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Trailing, c, walker.Current);
                 
-                Assert.IsTrue(walker.HasNext);
-                AssertNode(ForestNode<TreeForTest>.Edge.Trailing, a, walker.Next());
+            Assert.IsTrue(walker.MoveNext());
+            AssertNode(ForestNode<TreeForTest>.Edge.Trailing, a, walker.Current);
                 
-                Assert.IsFalse(walker.HasNext);
+            Assert.IsFalse(walker.MoveNext());
         }
 
         void AssertNode(ForestNode<TreeForTest>.Edge expectE, TreeForTest expectNode, ForestNode<TreeForTest> actual)
