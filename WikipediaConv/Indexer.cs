@@ -1111,4 +1111,206 @@ namespace WikipediaConv
 
         #endregion
     }
+
+    public class IndexerAction : IArchiveAction
+    {
+        private IReportProgress _report;
+
+        public IndexerAction(IReportProgress repo)
+        {
+            _report = repo;
+        }
+
+        /// <summary>
+        /// The path to the dump file
+        /// </summary>
+        private string filePath;
+        /// <summary>
+        /// The path to the index
+        /// </summary>
+        private string indexPath;
+        /// <summary>
+        /// The index searcher
+        /// </summary>
+        private IndexSearcher searcher;
+        /// <summary>
+        /// Whether the index exists at the specified location
+        /// </summary>
+        private bool indexExists;
+        /// <summary>
+        /// The analyzer to use for indexing and query tokenizing
+        /// </summary>
+        private Analyzer textAnalyzer;
+        /// <summary>
+        /// The query parser for the searches in this index
+        /// </summary>
+        private QueryParser queryParser;
+
+        /// <summary>
+        /// Gets a value indicating whether index exists.
+        /// </summary>
+        /// <value><c>true</c> if index exists; otherwise, <c>false</c>.</value>
+        public bool IndexExists
+        {
+            get
+            {
+                return indexExists;
+            }
+        }
+
+        /// <summary>
+        /// The index writer which is used for indexing
+        /// </summary>
+        private IndexWriter indexer;
+        private IndexWriter memoryIndexer;
+
+        void Initialize()
+        {
+            indexPath = Path.ChangeExtension(filePath, ".idx");
+
+            if (Directory.Exists(indexPath) &&
+                IndexReader.IndexExists(indexPath))
+            {
+                indexExists = true;
+            }
+
+            if (indexExists)
+            {
+                searcher = new IndexSearcher(indexPath);
+            }
+             
+            textAnalyzer = GuessAnalyzer(filePath);
+
+            queryParser = new QueryParser("title", textAnalyzer);
+
+            queryParser.SetDefaultOperator(QueryParser.Operator.AND);
+        }
+
+        private void FinalizeAction(bool failedOrAbort)
+        {
+            if (indexer != null)
+            {
+                indexer.Close();
+
+                indexer = null;
+            }
+
+            if (failedOrAbort)
+            {
+                Directory.Delete(indexPath, true);
+
+                indexExists = false;
+            }
+            else
+            {
+                if (indexExists)
+                {
+                    searcher = new IndexSearcher(indexPath);
+                }
+            }
+        }
+
+        private void PostAction()
+        {
+            Lucene.Net.Store.Directory dir = memoryIndexer.GetDirectory();
+
+            memoryIndexer.Close();
+
+            indexer.AddIndexes(new Lucene.Net.Store.Directory[] { dir });
+
+            memoryIndexer = null;
+            _report.ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.OptimizingIndex);
+
+            indexer.Optimize();
+
+            indexExists = true;
+        }
+
+        private void InitializeIndexer()
+        {
+            // Close any searchers
+
+            if (searcher != null)
+            {
+                searcher.Close();
+
+                searcher = null;
+            }
+
+            indexExists = false;
+
+            // Create the index writer
+
+            indexer = new IndexWriter(indexPath, textAnalyzer, true);
+            memoryIndexer = new IndexWriter(new RAMDirectory(), textAnalyzer, true);
+
+            memoryIndexer.SetMaxBufferedDocs(1000);
+            memoryIndexer.SetMergeFactor(100);
+
+            indexer.SetMaxBufferedDocs(1000);
+            indexer.SetMergeFactor(100);
+        }
+
+        private Analyzer GuessAnalyzer(string filePath)
+        {
+            Analyzer ret = null;
+
+            switch (Path.GetFileName(filePath).Substring(0, 2).ToLowerInvariant())
+            {
+                case "zh":
+                    ret = new ChineseAnalyzer();
+                    break;
+                case "cs":
+                    ret = new CzechAnalyzer();
+                    break;
+                case "da":
+                    ret = new SnowballAnalyzer("Danish");
+                    break;
+                case "nl":
+                    ret = new SnowballAnalyzer("Dutch");
+                    break;
+                case "en":
+                    ret = new SnowballAnalyzer("English");
+                    break;
+                case "fi":
+                    ret = new SnowballAnalyzer("Finnish");
+                    break;
+                case "fr":
+                    ret = new SnowballAnalyzer("French");
+                    break;
+                case "de":
+                    ret = new SnowballAnalyzer("German");
+                    break;
+                case "it":
+                    ret = new SnowballAnalyzer("Italian");
+                    break;
+                case "ja":
+                    ret = new CJKAnalyzer();
+                    break;
+                case "ko":
+                    ret = new CJKAnalyzer();
+                    break;
+                case "no":
+                    ret = new SnowballAnalyzer("Norwegian");
+                    break;
+                case "pt":
+                    ret = new SnowballAnalyzer("Portuguese");
+                    break;
+                case "ru":
+                    ret = new SnowballAnalyzer("Russian");
+                    break;
+                case "es":
+                    ret = new SnowballAnalyzer("Spanish");
+                    break;
+                case "se":
+                    ret = new SnowballAnalyzer("Swedish");
+                    break;
+                default:
+                    ret = new StandardAnalyzer();
+                    break;
+            }
+
+            return ret;
+        }
+    }
 }

@@ -61,6 +61,7 @@
       <DependentUpon>BrowseForm.cs</DependentUpon>
     </Compile>
     <Compile Include="bzip2.cs" />
+    <Compile Include="BzipReader.cs" />
     <Compile Include="ForestWalker.cs" />
     <Compile Include="ForestNode.cs" />
     <Compile Include="Formatter.cs" />
