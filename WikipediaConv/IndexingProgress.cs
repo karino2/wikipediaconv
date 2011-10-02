@@ -7,7 +7,7 @@ namespace WikipediaConv
     /// <summary>
     /// The state of the indexing process
     /// </summary>
-    struct IndexingProgress
+    public struct IndexingProgress
     {
         /// <summary>
         /// The state of the indexing process

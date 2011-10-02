@@ -23,13 +23,16 @@ namespace WikipediaConv
 {
     public interface IArchiveAction
     {
-        void Initialize();
         void PreAction();
         int IndexString(string currentText, long beginning, long end, int charCarryOver, bool lastBlock);
         void PostAction();
         void FinalizeAction(bool failedOrAbort);
 
         void Close();
+
+        void WaitTillFinish();
+
+        bool AbortIndexing { get; set; }
     }
     public interface IReportProgress
     {
@@ -38,12 +41,7 @@ namespace WikipediaConv
     public class BzipReader : IReportProgress
     {
 
-        IArchiveAction _action; // TODO: DI.
-        private const int MAX_RAMDIRECTORY_DOCS = 500000;
-        /// <summary>
-        /// The maximum hits to return per query
-        /// </summary>
-        public const int MAX_SEARCH_HITS = 100;
+        IArchiveAction _action;
         /// <summary>
         /// The maximum number of decoded blocks to keep in memory. A single block is roughly 1 M characters = 2 Mb
         /// </summary>
@@ -61,6 +59,7 @@ namespace WikipediaConv
         /// The path to the dump file
         /// </summary>
         private string filePath;
+        public string FilePath { get { return filePath; } }
         /// <summary>
         /// Occurs when the indexing is happening and the progress changes
         /// </summary>
@@ -110,10 +109,6 @@ namespace WikipediaConv
         /// </summary>
         private Dictionary<long, byte[]> blocksCache = new Dictionary<long, byte[]>();
         /// <summary>
-        /// Whether to use multiple threads while indexing the documents
-        /// </summary>
-        private bool multithreadedIndexing = false;
-        /// <summary>
         /// start time for operations
         /// </summary>
         private DateTime startTime;
@@ -132,21 +127,11 @@ namespace WikipediaConv
             _action = action;
 
 
-            Initialize();
-
             abortIndexing = false;
 
-            multithreadedIndexing = (Environment.ProcessorCount > 1);
         }
 
         #region Indexing methods
-
-        /// <summary>
-        /// The index writer which is used for indexing
-        /// </summary>
-        private IndexWriter indexer;
-        private IndexWriter memoryIndexer;
-
         /// <summary>
         ///  watch the bzip2 block locator and report progress
         /// </summary>
@@ -257,13 +242,7 @@ namespace WikipediaConv
                 }
 
                 // Wait till all the threads finish
-                while (activeThreads != 0)
-                {
-                    ReportProgress(0, IndexingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
-
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
-                }
-                ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
+                WaitTillFinish();
 
                 PostAction();
             }
@@ -279,32 +258,21 @@ namespace WikipediaConv
             ReportProgress(0, IndexingProgress.State.Finished, String.Empty);
         }
 
-        #region Indexer Related
-        private void Initialize()
+        private void WaitTillFinish()
         {
-            _action.Initialize();
+            _action.WaitTillFinish();
             /*
-            indexPath = Path.ChangeExtension(path, ".idx");
-
-            if (Directory.Exists(indexPath) &&
-                IndexReader.IndexExists(indexPath))
+            while (activeThreads != 0)
             {
-                indexExists = true;
+                ReportProgress(0, IndexingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
+
+                Thread.Sleep(TimeSpan.FromSeconds(5));
             }
-
-            if (indexExists)
-            {
-                searcher = new IndexSearcher(indexPath);
-            }
-             
-            textAnalyzer = GuessAnalyzer(filePath);
-
-            queryParser = new QueryParser("title", textAnalyzer);
-
-            queryParser.SetDefaultOperator(QueryParser.Operator.AND);
+            ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
              * */
         }
 
+        #region Indexer Related
         private void FinalizeAction(bool failed)
         {
             _action.FinalizeAction(failed || abortIndexing);
@@ -393,14 +361,25 @@ namespace WikipediaConv
         {
             return _action.IndexString(currentText, beginning, end, charCarryOver, lastBlock);
         }
+        /// <summary>
+        /// Closes the searcher object
+        /// </summary>
+        public void Close()
+        {
+            _action.Close();
+            /*
+            if (indexExists &&
+                searcher != null)
+            {
+                searcher.Close();
+
+                searcher = null;
+            }
+             * */
+        }
+
         #endregion 
 
-        /// <summary>
-        /// Store the offsets of the previous block in case of the Wiki topic carryover
-        /// </summary>
-        private long previousBlockBeginning = -1;
-        private long previousBlockEnd = -1;
-        private int activeThreads = 0;
 
 
 
@@ -581,38 +560,7 @@ namespace WikipediaConv
 
         #endregion
 
-        #region Searching methods
-
-        private bool searchRunning;
-
-        private struct SearchItem
-        {
-            public string SearchRequest;
-            public int MaxResults;
-            public HitCollection Hits;
-            public Queue<Exception> Errors;
-        }
-
-        #endregion
-
         #region Misc
-
-        /// <summary>
-        /// Closes the searcher object
-        /// </summary>
-        public void Close()
-        {
-            _action.Close();
-            /*
-            if (indexExists &&
-                searcher != null)
-            {
-                searcher.Close();
-
-                searcher = null;
-            }
-             * */
-        }
 
         public void ReportProgress(int percentage, IndexingProgress.State status, string message)
         {
@@ -660,10 +608,11 @@ namespace WikipediaConv
                 indexingThread.IsAlive)
             {
                 abortIndexing = true;
+                _action.AbortIndexing = true;
             }
         }
 
-        protected virtual void OnProgressChanged(ProgressChangedEventArgs e)
+        public virtual void OnProgressChanged(ProgressChangedEventArgs e)
         {
             if (ProgressChanged != null)
             {
