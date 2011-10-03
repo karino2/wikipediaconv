@@ -282,7 +282,7 @@ namespace WikipediaConv
         }
     }
 
-    public class IndexerAction : IArchiveAction
+    public class IndexerAction : IDecodedAction
     {
         internal IReportProgress _report;
 
@@ -402,7 +402,7 @@ namespace WikipediaConv
         /// <param name="charCarryOver">Whether there was a Wiki topic carryover from previous block</param>
         /// <param name="lastBlock">True if this is the last block</param>
         /// <returns>The number of characters in the end of the string that match the header entry</returns>
-        public int IndexString(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
+        public int Action(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
         {
             bool firstRun = true;
 

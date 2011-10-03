@@ -21,10 +21,10 @@ using FSDirectory = Lucene.Net.Store.FSDirectory;
 
 namespace WikipediaConv
 {
-    public interface IArchiveAction
+    public interface IDecodedAction
     {
         void PreAction();
-        int IndexString(string currentText, long beginning, long end, int charCarryOver, bool lastBlock);
+        int Action(string currentText, long beginning, long end, int charCarryOver, bool lastBlock);
         void PostAction();
         void FinalizeAction(bool failedOrAbort);
 
@@ -41,7 +41,7 @@ namespace WikipediaConv
     public class BzipReader : IReportProgress
     {
 
-        IArchiveAction _action;
+        IDecodedAction _action;
         /// <summary>
         /// The maximum number of decoded blocks to keep in memory. A single block is roughly 1 M characters = 2 Mb
         /// </summary>
@@ -121,7 +121,7 @@ namespace WikipediaConv
         /// Initializes a new instance of the <see cref="BzipReader"/> class.
         /// </summary>
         /// <param name="path">The path to the .xml.bz2 dump of wikipedia</param>
-        public BzipReader(string path, IArchiveAction action)
+        public BzipReader(string path, IDecodedAction action)
         {
             filePath = path;
             _action = action;
@@ -261,92 +261,22 @@ namespace WikipediaConv
         private void WaitTillFinish()
         {
             _action.WaitTillFinish();
-            /*
-            while (activeThreads != 0)
-            {
-                ReportProgress(0, IndexingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
-
-                Thread.Sleep(TimeSpan.FromSeconds(5));
-            }
-            ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
-             * */
         }
 
         #region Indexer Related
         private void FinalizeAction(bool failed)
         {
             _action.FinalizeAction(failed || abortIndexing);
-            /*
-            if (indexer != null)
-            {
-                indexer.Close();
-
-                indexer = null;
-            }
-
-            if (failed ||
-                abortIndexing)
-            {
-                Directory.Delete(indexPath, true);
-
-                indexExists = false;
-            }
-            else
-            {
-                if (indexExists)
-                {
-                    searcher = new IndexSearcher(indexPath);
-                }
-            }
-             * */
         }
 
         private void PostAction()
         {
             _action.PostAction();
-            /*
-            Lucene.Net.Store.Directory dir = memoryIndexer.GetDirectory();
-
-            memoryIndexer.Close();
-
-            indexer.AddIndexes(new Lucene.Net.Store.Directory[] { dir });
-
-            memoryIndexer = null;
-            ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.OptimizingIndex);
-
-            indexer.Optimize();
-
-            indexExists = true;
-             * */
         }
 
         private void InitializeIndexer()
         {
             _action.PreAction();
-            /*
-            // Close any searchers
-
-            if (searcher != null)
-            {
-                searcher.Close();
-
-                searcher = null;
-            }
-
-            indexExists = false;
-
-            // Create the index writer
-
-            indexer = new IndexWriter(indexPath, textAnalyzer, true);
-            memoryIndexer = new IndexWriter(new RAMDirectory(), textAnalyzer, true);
-
-            memoryIndexer.SetMaxBufferedDocs(1000);
-            memoryIndexer.SetMergeFactor(100);
-
-            indexer.SetMaxBufferedDocs(1000);
-            indexer.SetMergeFactor(100);
-             * */
-
         }
         /// <summary>
         /// Indexes the provided string
@@ -359,7 +289,7 @@ namespace WikipediaConv
         /// <returns>The number of characters in the end of the string that match the header entry</returns>
         private int IndexString(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
         {
-            return _action.IndexString(currentText, beginning, end, charCarryOver, lastBlock);
+            return _action.Action(currentText, beginning, end, charCarryOver, lastBlock);
         }
         /// <summary>
         /// Closes the searcher object
@@ -367,15 +297,6 @@ namespace WikipediaConv
         public void Close()
         {
             _action.Close();
-            /*
-            if (indexExists &&
-                searcher != null)
-            {
-                searcher.Close();
-
-                searcher = null;
-            }
-             * */
         }
 
         #endregion 
