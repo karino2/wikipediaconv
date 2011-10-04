@@ -62,7 +62,7 @@ namespace WikipediaConv
 
         private void Indexer_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            IndexingProgress ip = (IndexingProgress)e.UserState;
+            DecodingProgress ip = (DecodingProgress)e.UserState;
             
             if (!String.IsNullOrEmpty(ip.Message))
             {
@@ -78,12 +78,12 @@ namespace WikipediaConv
                 progressBar.Value = e.ProgressPercentage;
             }
 
-            if (ip.IndexingState == IndexingProgress.State.Failure)
+            if (ip.DecodingState == DecodingProgress.State.Failure)
             {
                 btnDone.Text = Properties.Resources.CloseIndexingForm;
             }
 
-            if (ip.IndexingState == IndexingProgress.State.Finished)
+            if (ip.DecodingState == DecodingProgress.State.Finished)
             {
                 indexingRunning = false;
 

@@ -7,7 +7,7 @@ namespace WikipediaConv
     /// <summary>
     /// The state of the indexing process
     /// </summary>
-    public struct IndexingProgress
+    public struct DecodingProgress
     {
         /// <summary>
         /// The state of the indexing process
@@ -31,7 +31,7 @@ namespace WikipediaConv
         /// <summary>
         /// The state of the indexing process
         /// </summary>
-        public State IndexingState;
+        public State DecodingState;
         /// <summary>
         /// The error message, if any
         /// </summary>

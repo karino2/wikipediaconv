@@ -32,11 +32,11 @@ namespace WikipediaConv
 
         void WaitTillFinish();
 
-        bool AbortIndexing { get; set; }
+        bool AbortDecoding { get; set; }
     }
     public interface IReportProgress
     {
-        void ReportProgress(int percentage, IndexingProgress.State status, string message);
+        void ReportProgress(int percentage, DecodingProgress.State status, string message);
     }
     public class BzipReader : IReportProgress
     {
@@ -87,15 +87,15 @@ namespace WikipediaConv
         /// <summary>
         /// The indexing thread
         /// </summary>
-        private Thread indexingThread;
+        private Thread decodingThread;
         /// <summary>
         /// The bzip2-watching thread
         /// </summary>
         private Thread bzip2WatchThread;
         /// <summary>
-        /// Whether the indexing process should be aborted
+        /// Whether the decoding process should be aborted
         /// </summary>
-        private bool abortIndexing;
+        private bool abortDecoding;
         /// <summary>
         /// Percent done for bzip2 block location progress
         /// </summary>
@@ -127,11 +127,11 @@ namespace WikipediaConv
             _action = action;
 
 
-            abortIndexing = false;
+            abortDecoding = false;
 
         }
 
-        #region Indexing methods
+        #region Decoding methods
         /// <summary>
         ///  watch the bzip2 block locator and report progress
         /// </summary>
@@ -140,21 +140,21 @@ namespace WikipediaConv
             while (true) // we expect to be aborted externally
             {
                 Thread.Sleep(500);
-                ReportProgress(bz2_blocks_pct_done, IndexingProgress.State.Running, String.Empty);
+                ReportProgress(bz2_blocks_pct_done, DecodingProgress.State.Running, String.Empty);
             }
         }
 
         /// <summary>
         /// Creates the index for the bz2 file on a separate thread.
         /// </summary>
-        private void CreateIndexAsync()
+        private void DecodeAsync()
         {
             bool failed = false;
             startTime = DateTime.Now;
 
             try
             {
-                InitializeIndexer();
+                InitializeAction();
 
                 // Locate the bzip2 blocks in the file
 
@@ -183,12 +183,12 @@ namespace WikipediaConv
 
                 startTime = DateTime.Now;
                 elapsed = new TimeSpan(0);
-                ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.ProgressIndexing);
-                for (long i = 0; i < totalBlocks && !abortIndexing; i++)
+                ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.ProgressIndexing);
+                for (long i = 0; i < totalBlocks && !abortDecoding; i++)
                 {
-                    ReportProgress((int)((double)(i * 100) / (double)totalBlocks), IndexingProgress.State.Running, String.Empty);
+                    ReportProgress((int)((double)(i * 100) / (double)totalBlocks), DecodingProgress.State.Running, String.Empty);
 
-                    #region Indexing logic
+                    #region Load-Decode-Action
 
                     loadedLength = LoadBlock(beginnings[i], ends[i], ref blockBuf);
 
@@ -223,7 +223,7 @@ namespace WikipediaConv
 
                     int carryOverLength = charCarryOver.Length;
 
-                    int charsMatched = IndexString(sb.ToString(), beginnings[i], ends[i], carryOverLength, i == totalBlocks - 1);
+                    int charsMatched = Action(sb.ToString(), beginnings[i], ends[i], carryOverLength, i == totalBlocks - 1);
 
                     // There's a Wiki topic carryover, let's store the characters which need to be carried over 
 
@@ -248,14 +248,14 @@ namespace WikipediaConv
             }
             catch (Exception ex)
             {
-                ReportProgress(0, IndexingProgress.State.Failure, ex.ToString());
+                ReportProgress(0, DecodingProgress.State.Failure, ex.ToString());
 
                 failed = true;
             }
 
             // Try to release some memory
             FinalizeAction(failed);
-            ReportProgress(0, IndexingProgress.State.Finished, String.Empty);
+            ReportProgress(0, DecodingProgress.State.Finished, String.Empty);
         }
 
         private void WaitTillFinish()
@@ -263,10 +263,10 @@ namespace WikipediaConv
             _action.WaitTillFinish();
         }
 
-        #region Indexer Related
+        #region Action Related
         private void FinalizeAction(bool failed)
         {
-            _action.FinalizeAction(failed || abortIndexing);
+            _action.FinalizeAction(failed || abortDecoding);
         }
 
         private void PostAction()
@@ -274,7 +274,7 @@ namespace WikipediaConv
             _action.PostAction();
         }
 
-        private void InitializeIndexer()
+        private void InitializeAction()
         {
             _action.PreAction();
         }
@@ -287,7 +287,7 @@ namespace WikipediaConv
         /// <param name="charCarryOver">Whether there was a Wiki topic carryover from previous block</param>
         /// <param name="lastBlock">True if this is the last block</param>
         /// <returns>The number of characters in the end of the string that match the header entry</returns>
-        private int IndexString(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
+        private int Action(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
         {
             return _action.Action(currentText, beginning, end, charCarryOver, lastBlock);
         }
@@ -381,7 +381,7 @@ namespace WikipediaConv
         /// </summary>
         private void LocateBlocks()
         {
-            ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.ProgressLocatingBlocks);
+            ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.ProgressLocatingBlocks);
             FileInfo fi = new FileInfo(filePath);
             bz2_filesize = fi.Length;
             startTime = DateTime.Now;
@@ -483,12 +483,12 @@ namespace WikipediaConv
 
         #region Misc
 
-        public void ReportProgress(int percentage, IndexingProgress.State status, string message)
+        public void ReportProgress(int percentage, DecodingProgress.State status, string message)
         {
             int eta;
-            IndexingProgress ip = new IndexingProgress();
+            DecodingProgress ip = new DecodingProgress();
 
-            ip.IndexingState = status;
+            ip.DecodingState = status;
             ip.Message = message;
 
             // a naive ETA formula: ETA = ElapsedMinutes * 100 / percentDone - Elapsed
@@ -516,20 +516,20 @@ namespace WikipediaConv
             OnProgressChanged(new ProgressChangedEventArgs(percentage, ip));
         }
 
-        public void CreateIndex()
+        public void StartDecodeThread()
         {
-            indexingThread = new Thread(CreateIndexAsync);
+            decodingThread = new Thread(DecodeAsync);
 
-            indexingThread.Start();
+            decodingThread.Start();
         }
 
-        public void AbortIndex()
+        public void AbortDecoding()
         {
-            if (indexingThread != null &&
-                indexingThread.IsAlive)
+            if (decodingThread != null &&
+                decodingThread.IsAlive)
             {
-                abortIndexing = true;
-                _action.AbortIndexing = true;
+                abortDecoding = true;
+                _action.AbortDecoding = true;
             }
         }
 

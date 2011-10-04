@@ -40,7 +40,7 @@ namespace WikipediaConv
         #region delegate to IndexAction and BzipReader
         public bool IndexExists { get { return _action.IndexExists; } }
         public IndexSearcher Searcher { get { return _action.Searcher; } }
-        public void CreateIndex() { _bzipReader.CreateIndex(); }
+        public void CreateIndex() { _bzipReader.StartDecodeThread(); }
         protected virtual void OnProgressChanged(ProgressChangedEventArgs e)
         {
             _bzipReader.OnProgressChanged(e);
@@ -266,7 +266,7 @@ namespace WikipediaConv
 
         internal void AbortIndex()
         {
-            _bzipReader.AbortIndex();
+            _bzipReader.AbortDecoding();
         }
 
         public string File { get { return _bzipReader.FilePath.ToLowerInvariant(); } }
@@ -364,7 +364,7 @@ namespace WikipediaConv
 
             queryParser.SetDefaultOperator(QueryParser.Operator.AND);
             multithreadedIndexing = (Environment.ProcessorCount > 1);
-            AbortIndexing = false;
+            AbortDecoding = false;
         }
 
 
@@ -414,7 +414,7 @@ namespace WikipediaConv
             long id = -1;
 
             while (topicStart >= 0 &&
-                !AbortIndexing)
+                !AbortDecoding)
             {
                 titleEnd = -1;
                 idStart = -1;
@@ -552,7 +552,7 @@ namespace WikipediaConv
 
             if (memoryIndexer.DocCount() >= MAX_RAMDIRECTORY_DOCS)
             {
-                _report.ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
+                _report.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
 
                 while (activeThreads != 0)
                 {
@@ -613,11 +613,11 @@ namespace WikipediaConv
         {
             while (activeThreads != 0)
             {
-                _report.ReportProgress(0, IndexingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
+                _report.ReportProgress(0, DecodingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
 
                 Thread.Sleep(TimeSpan.FromSeconds(5));
             }
-            _report.ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
+            _report.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
         }
 
 
@@ -630,7 +630,7 @@ namespace WikipediaConv
             indexer.AddIndexes(new Lucene.Net.Store.Directory[] { dir });
 
             memoryIndexer = null;
-            _report.ReportProgress(0, IndexingProgress.State.Running, Properties.Resources.OptimizingIndex);
+            _report.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.OptimizingIndex);
 
             indexer.Optimize();
 
@@ -741,6 +741,6 @@ namespace WikipediaConv
         public QueryParser QueryParser { get { return queryParser; } }
 
 
-        public bool AbortIndexing { get; set; }
+        public bool AbortDecoding { get; set; }
     }
 }
