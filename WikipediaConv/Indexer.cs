@@ -21,7 +21,13 @@ using FSDirectory = Lucene.Net.Store.FSDirectory;
 
 namespace WikipediaConv
 {
-    public class Indexer
+    public interface ILongTask
+    {
+        event ProgressChangedEventHandler ProgressChanged;
+        void CreateIndex();
+        void AbortIndex();
+    }
+    public class Indexer : ILongTask
     {
         /// <summary>
         /// The maximum hits to return per query
@@ -34,7 +40,7 @@ namespace WikipediaConv
         {
             _action = new IndexerAction(path);
             _bzipReader = new BzipReader(path, _action);
-            _action._report = _bzipReader;
+            _action._notify = _bzipReader;
         }
 
         #region delegate to IndexAction and BzipReader
@@ -264,7 +270,7 @@ namespace WikipediaConv
 
         #endregion
 
-        internal void AbortIndex()
+        public void AbortIndex()
         {
             _bzipReader.AbortDecoding();
         }
@@ -284,7 +290,7 @@ namespace WikipediaConv
 
     public class IndexerAction : IDecodedAction
     {
-        internal IReportProgress _report;
+        internal INotifyDecoder _notify;
 
         private const int MAX_RAMDIRECTORY_DOCS = 500000;
         /// <summary>
@@ -335,13 +341,6 @@ namespace WikipediaConv
         /// </summary>
         private bool multithreadedIndexing = false;
 
-        /// <summary>
-        /// Store the offsets of the previous block in case of the Wiki topic carryover
-        /// </summary>
-        private long previousBlockBeginning = -1;
-        private long previousBlockEnd = -1;
-        private int activeThreads = 0;
-
         public IndexerAction(string path)
         {
             filePath = path;
@@ -364,7 +363,6 @@ namespace WikipediaConv
 
             queryParser.SetDefaultOperator(QueryParser.Operator.AND);
             multithreadedIndexing = (Environment.ProcessorCount > 1);
-            AbortDecoding = false;
         }
 
 
@@ -393,168 +391,16 @@ namespace WikipediaConv
             indexer.SetMergeFactor(100);
         }
 
-        /// <summary>
-        /// Indexes the provided string
-        /// </summary>
-        /// <param name="currentText">The string to index</param>
-        /// <param name="beginning">The beginning offset of the block</param>
-        /// <param name="end">The end offset of the block</param>
-        /// <param name="charCarryOver">Whether there was a Wiki topic carryover from previous block</param>
-        /// <param name="lastBlock">True if this is the last block</param>
-        /// <returns>The number of characters in the end of the string that match the header entry</returns>
-        public int Action(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
+
+        public void FlashAction()
         {
-            bool firstRun = true;
-
-            int topicStart = currentText.IndexOf("<title>", StringComparison.InvariantCultureIgnoreCase);
-
-            int titleEnd, idStart, idEnd, topicEnd = -1;
-
-            string title = String.Empty;
-            long id = -1;
-
-            while (topicStart >= 0 &&
-                !AbortDecoding)
-            {
-                titleEnd = -1;
-                idStart = -1;
-                idEnd = -1;
-                topicEnd = -1;
-
-                titleEnd = currentText.IndexOf("</title>", topicStart, StringComparison.InvariantCultureIgnoreCase);
-
-                if (titleEnd < 0)
-                {
-                    break;
-                }
-
-                title = currentText.Substring(topicStart + "<title>".Length, titleEnd - topicStart - "<title>".Length);
-
-                idStart = currentText.IndexOf("<id>", titleEnd, StringComparison.InvariantCultureIgnoreCase);
-
-                if (idStart < 0)
-                {
-                    break;
-                }
-
-                idEnd = currentText.IndexOf("</id>", idStart, StringComparison.InvariantCultureIgnoreCase);
-
-                if (idEnd < 0)
-                {
-                    break;
-                }
-
-                id = Convert.ToInt64(currentText.Substring(idStart + "<id>".Length, idEnd - idStart - "<id>".Length));
-
-                topicEnd = currentText.IndexOf("</text>", idEnd, StringComparison.InvariantCultureIgnoreCase);
-
-                if (topicEnd < 0)
-                {
-                    break;
-                }
-
-                // Start creating the object for the tokenizing ThreadPool thread
-
-                long[] begins = new long[1];
-                long[] ends = new long[1];
-
-                // Was there a carryover?
-
-                if (firstRun)
-                {
-                    // Did the <title> happen in the carryover area?
-
-                    if (charCarryOver > 0 &&
-                        topicStart < charCarryOver)
-                    {
-                        if (previousBlockBeginning > -1 &&
-                            previousBlockEnd > -1)
-                        {
-                            begins = new long[2];
-                            ends = new long[2];
-
-                            begins[1] = previousBlockBeginning;
-                            ends[1] = previousBlockEnd;
-                        }
-                        else
-                        {
-                            throw new Exception(Properties.Resources.CarryoverNoPrevBlock);
-                        }
-                    }
-                }
-
-                begins[0] = beginning;
-                ends[0] = end;
-
-                PageInfo pi = new PageInfo(id, title, begins, ends);
-
-                Interlocked.Increment(ref activeThreads);
-
-                if (multithreadedIndexing)
-                {
-                    ThreadPool.QueueUserWorkItem(TokenizeAndAdd, pi);
-                }
-                else
-                {
-                    TokenizeAndAdd(pi);
-                }
-
-                // Store the last successful title start position
-
-                int nextTopicStart = currentText.IndexOf("<title>", topicStart + 1, StringComparison.InvariantCultureIgnoreCase);
-
-                if (nextTopicStart >= 0)
-                {
-                    topicStart = nextTopicStart;
-                }
-                else
-                {
-                    break;
-                }
-
-                firstRun = false;
-            }
-
-            // Now calculate how many characters we need to save for next block
-
-            int charsToSave = 0;
-
-            if (topicStart == -1)
-            {
-                if (!lastBlock)
-                {
-                    throw new Exception(Properties.Resources.NoTopicsInBlock);
-                }
-            }
-            else
-            {
-                if (!lastBlock)
-                {
-                    if (topicEnd == -1)
-                    {
-                        charsToSave = currentText.Length - topicStart;
-                    }
-                    else
-                    {
-                        if (topicStart < topicEnd)
-                        {
-                            charsToSave = currentText.Length - topicEnd - "</text>".Length;
-                        }
-                        else
-                        {
-                            charsToSave = currentText.Length - topicStart;
-                        }
-                    }
-                }
-            }
-
             // Flush the memory indexer to disk from time to time
 
             if (memoryIndexer.DocCount() >= MAX_RAMDIRECTORY_DOCS)
             {
-                _report.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
+                _notify.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
 
-                while (activeThreads != 0)
+                while (_notify.IsActive())
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(5));
                 }
@@ -567,17 +413,12 @@ namespace WikipediaConv
 
                 memoryIndexer = new IndexWriter(new RAMDirectory(), textAnalyzer, true);
             }
-
-            previousBlockBeginning = beginning;
-            previousBlockEnd = end;
-
-            return charsToSave;
         }
         /// <summary>
         /// Tokenizes and adds the specified PageInfo object to Lucene index
         /// </summary>
         /// <param name="state">PageInfo object</param>
-        private void TokenizeAndAdd(object state)
+        public void Action(object state)
         {
             PageInfo pi = (PageInfo)state;
 
@@ -606,19 +447,9 @@ namespace WikipediaConv
 
             memoryIndexer.AddDocument(d);
 
-            Interlocked.Decrement(ref activeThreads);
+            _notify.NotifyEnd();
         }
 
-        public void WaitTillFinish()
-        {
-            while (activeThreads != 0)
-            {
-                _report.ReportProgress(0, DecodingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
-
-                Thread.Sleep(TimeSpan.FromSeconds(5));
-            }
-            _report.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
-        }
 
 
         public void PostAction()
@@ -630,7 +461,7 @@ namespace WikipediaConv
             indexer.AddIndexes(new Lucene.Net.Store.Directory[] { dir });
 
             memoryIndexer = null;
-            _report.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.OptimizingIndex);
+            _notify.ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.OptimizingIndex);
 
             indexer.Optimize();
 
@@ -739,8 +570,5 @@ namespace WikipediaConv
 
         public IndexSearcher Searcher { get { return searcher; } }
         public QueryParser QueryParser { get { return queryParser; } }
-
-
-        public bool AbortDecoding { get; set; }
     }
 }

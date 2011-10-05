@@ -19,24 +19,24 @@ namespace WikipediaConv
         /// <summary>
         /// The indexer we're associated with
         /// </summary>
-        private Indexer ixr;
+        private ILongTask ltask;
         /// <summary>
         /// Whether indexing is currently being executed
         /// </summary>
         private bool indexingRunning;
 
-        public ProgressDialog(Indexer indexer)
+        public ProgressDialog(ILongTask indexer)
         {
             InitializeComponent();
 
-            ixr = indexer;
+            ltask = indexer;
 
-            ixr.ProgressChanged += new ProgressChangedEventHandler(ixr_ProgressChanged);
+            ltask.ProgressChanged += new ProgressChangedEventHandler(ixr_ProgressChanged);
         }
 
         private void ProgressDialog_Shown(object sender, EventArgs e)
         {
-            ixr.CreateIndex();
+            ltask.CreateIndex();
 
             indexingRunning = true;
         }
@@ -49,7 +49,7 @@ namespace WikipediaConv
 
                 textBox.AppendText(Properties.Resources.AbortingIndexing + Environment.NewLine);
 
-                ixr.AbortIndex();
+                ltask.AbortIndex();
             }
             else
             {

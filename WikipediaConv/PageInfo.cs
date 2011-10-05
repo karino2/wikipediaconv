@@ -70,7 +70,7 @@ namespace WikipediaConv
         /// <summary>
         /// This constructor is used while retrieving the hit from the dump
         /// </summary>
-        /// <param name="ixr">The dump indexer this Wiki topic belongs to</param>
+        /// <param name="ltask">The dump indexer this Wiki topic belongs to</param>
         /// <param name="hit">The Lucene Hit object</param>
         public PageInfo(Indexer ixr, Hit hit)
         {

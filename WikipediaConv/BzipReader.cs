@@ -24,21 +24,24 @@ namespace WikipediaConv
     public interface IDecodedAction
     {
         void PreAction();
-        int Action(string currentText, long beginning, long end, int charCarryOver, bool lastBlock);
         void PostAction();
         void FinalizeAction(bool failedOrAbort);
 
         void Close();
 
-        void WaitTillFinish();
+        void Action(object state);
 
-        bool AbortDecoding { get; set; }
+        void FlashAction();
     }
-    public interface IReportProgress
+    public interface INotifyDecoder
     {
         void ReportProgress(int percentage, DecodingProgress.State status, string message);
+        void NotifyEnd();
+
+        // This is not Notify. Maybe bat name.
+        bool IsActive();
     }
-    public class BzipReader : IReportProgress
+    public class BzipReader : INotifyDecoder
     {
 
         IDecodedAction _action;
@@ -117,6 +120,19 @@ namespace WikipediaConv
         /// </summary>
         private TimeSpan elapsed;
 
+
+        /// <summary>
+        /// Store the offsets of the previous block in case of the Wiki topic carryover
+        /// </summary>
+        private long previousBlockBeginning = -1;
+        private long previousBlockEnd = -1;
+        private int activeThreads = 0;
+
+        /// <summary>
+        /// Whether to use multiple threads while indexing the documents
+        /// </summary>
+        private bool multithreadedIndexing = false;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BzipReader"/> class.
         /// </summary>
@@ -127,8 +143,8 @@ namespace WikipediaConv
             _action = action;
 
 
+            multithreadedIndexing = (Environment.ProcessorCount > 1);
             abortDecoding = false;
-
         }
 
         #region Decoding methods
@@ -188,7 +204,7 @@ namespace WikipediaConv
                 {
                     ReportProgress((int)((double)(i * 100) / (double)totalBlocks), DecodingProgress.State.Running, String.Empty);
 
-                    #region Load-Decode-Action
+                    #region Load-Decode-HandleDecodedData
 
                     loadedLength = LoadBlock(beginnings[i], ends[i], ref blockBuf);
 
@@ -223,7 +239,7 @@ namespace WikipediaConv
 
                     int carryOverLength = charCarryOver.Length;
 
-                    int charsMatched = Action(sb.ToString(), beginnings[i], ends[i], carryOverLength, i == totalBlocks - 1);
+                    int charsMatched = HandleDecodedData(sb.ToString(), beginnings[i], ends[i], carryOverLength, i == totalBlocks - 1);
 
                     // There's a Wiki topic carryover, let's store the characters which need to be carried over 
 
@@ -258,12 +274,170 @@ namespace WikipediaConv
             ReportProgress(0, DecodingProgress.State.Finished, String.Empty);
         }
 
-        private void WaitTillFinish()
+        /// <summary>
+        /// Indexes the provided string
+        /// </summary>
+        /// <param name="currentText">The string to index</param>
+        /// <param name="beginning">The beginning offset of the block</param>
+        /// <param name="end">The end offset of the block</param>
+        /// <param name="charCarryOver">Whether there was a Wiki topic carryover from previous block</param>
+        /// <param name="lastBlock">True if this is the last block</param>
+        /// <returns>The number of characters in the end of the string that match the header entry</returns>
+        public int HandleDecodedData(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
         {
-            _action.WaitTillFinish();
+            bool firstRun = true;
+
+            int topicStart = currentText.IndexOf("<title>", StringComparison.InvariantCultureIgnoreCase);
+
+            int titleEnd, idStart, idEnd, topicEnd = -1;
+
+            string title = String.Empty;
+            long id = -1;
+
+            while (topicStart >= 0 &&
+                !abortDecoding)
+            {
+                titleEnd = -1;
+                idStart = -1;
+                idEnd = -1;
+                topicEnd = -1;
+
+                titleEnd = currentText.IndexOf("</title>", topicStart, StringComparison.InvariantCultureIgnoreCase);
+
+                if (titleEnd < 0)
+                {
+                    break;
+                }
+
+                title = currentText.Substring(topicStart + "<title>".Length, titleEnd - topicStart - "<title>".Length);
+
+                idStart = currentText.IndexOf("<id>", titleEnd, StringComparison.InvariantCultureIgnoreCase);
+
+                if (idStart < 0)
+                {
+                    break;
+                }
+
+                idEnd = currentText.IndexOf("</id>", idStart, StringComparison.InvariantCultureIgnoreCase);
+
+                if (idEnd < 0)
+                {
+                    break;
+                }
+
+                id = Convert.ToInt64(currentText.Substring(idStart + "<id>".Length, idEnd - idStart - "<id>".Length));
+
+                topicEnd = currentText.IndexOf("</text>", idEnd, StringComparison.InvariantCultureIgnoreCase);
+
+                if (topicEnd < 0)
+                {
+                    break;
+                }
+
+                // Start creating the object for the tokenizing ThreadPool thread
+
+                long[] begins = new long[1];
+                long[] ends = new long[1];
+
+                // Was there a carryover?
+
+                if (firstRun)
+                {
+                    // Did the <title> happen in the carryover area?
+
+                    if (charCarryOver > 0 &&
+                        topicStart < charCarryOver)
+                    {
+                        if (previousBlockBeginning > -1 &&
+                            previousBlockEnd > -1)
+                        {
+                            begins = new long[2];
+                            ends = new long[2];
+
+                            begins[1] = previousBlockBeginning;
+                            ends[1] = previousBlockEnd;
+                        }
+                        else
+                        {
+                            throw new Exception(Properties.Resources.CarryoverNoPrevBlock);
+                        }
+                    }
+                }
+
+                begins[0] = beginning;
+                ends[0] = end;
+
+                PageInfo pi = new PageInfo(id, title, begins, ends);
+
+                Interlocked.Increment(ref activeThreads);
+
+                if (multithreadedIndexing)
+                {
+                    ThreadPool.QueueUserWorkItem(TokenizeAndAdd, pi);
+                }
+                else
+                {
+                    TokenizeAndAdd(pi);
+                }
+
+                // Store the last successful title start position
+
+                int nextTopicStart = currentText.IndexOf("<title>", topicStart + 1, StringComparison.InvariantCultureIgnoreCase);
+
+                if (nextTopicStart >= 0)
+                {
+                    topicStart = nextTopicStart;
+                }
+                else
+                {
+                    break;
+                }
+
+                firstRun = false;
+            }
+
+            // Now calculate how many characters we need to save for next block
+
+            int charsToSave = 0;
+
+            if (topicStart == -1)
+            {
+                if (!lastBlock)
+                {
+                    throw new Exception(Properties.Resources.NoTopicsInBlock);
+                }
+            }
+            else
+            {
+                if (!lastBlock)
+                {
+                    if (topicEnd == -1)
+                    {
+                        charsToSave = currentText.Length - topicStart;
+                    }
+                    else
+                    {
+                        if (topicStart < topicEnd)
+                        {
+                            charsToSave = currentText.Length - topicEnd - "</text>".Length;
+                        }
+                        else
+                        {
+                            charsToSave = currentText.Length - topicStart;
+                        }
+                    }
+                }
+            }
+
+            FlashAction();
+
+            previousBlockBeginning = beginning;
+            previousBlockEnd = end;
+
+            return charsToSave;
         }
 
-        #region Action Related
+        #region HandleDecodedData Related
         private void FinalizeAction(bool failed)
         {
             _action.FinalizeAction(failed || abortDecoding);
@@ -279,18 +453,29 @@ namespace WikipediaConv
             _action.PreAction();
         }
         /// <summary>
-        /// Indexes the provided string
+        /// Tokenizes and adds the specified PageInfo object to Lucene index
         /// </summary>
-        /// <param name="currentText">The string to index</param>
-        /// <param name="beginning">The beginning offset of the block</param>
-        /// <param name="end">The end offset of the block</param>
-        /// <param name="charCarryOver">Whether there was a Wiki topic carryover from previous block</param>
-        /// <param name="lastBlock">True if this is the last block</param>
-        /// <returns>The number of characters in the end of the string that match the header entry</returns>
-        private int Action(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
+        /// <param name="state">PageInfo object</param>
+        private void TokenizeAndAdd(object state)
         {
-            return _action.Action(currentText, beginning, end, charCarryOver, lastBlock);
+            _action.Action(state);
         }
+
+        private void FlashAction()
+        {
+            _action.FlashAction();
+        }
+        private void WaitTillFinish()
+        {
+            while (IsActive())
+            {
+                ReportProgress(0, DecodingProgress.State.Running, String.Format(Properties.Resources.WaitingForTokenizers, activeThreads));
+
+                Thread.Sleep(TimeSpan.FromSeconds(5));
+            }
+            ReportProgress(0, DecodingProgress.State.Running, Properties.Resources.FlushingDocumentsToDisk);
+        }
+
         /// <summary>
         /// Closes the searcher object
         /// </summary>
@@ -481,8 +666,7 @@ namespace WikipediaConv
 
         #endregion
 
-        #region Misc
-
+        #region notify
         public void ReportProgress(int percentage, DecodingProgress.State status, string message)
         {
             int eta;
@@ -516,6 +700,20 @@ namespace WikipediaConv
             OnProgressChanged(new ProgressChangedEventArgs(percentage, ip));
         }
 
+        public bool IsActive()
+        {
+            return activeThreads != 0;
+        }
+
+        public void NotifyEnd()
+        {
+            Interlocked.Decrement(ref activeThreads);
+        }
+        #endregion
+
+        #region Misc
+
+
         public void StartDecodeThread()
         {
             decodingThread = new Thread(DecodeAsync);
@@ -529,7 +727,6 @@ namespace WikipediaConv
                 decodingThread.IsAlive)
             {
                 abortDecoding = true;
-                _action.AbortDecoding = true;
             }
         }
 
