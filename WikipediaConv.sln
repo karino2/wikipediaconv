@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snowball.Net", "Snowball.NE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WikipediaConvTest", "WikipediaConvTest\WikipediaConvTest.csproj", "{7A6E6594-DD1B-45A7-8B72-EBF2F9314126}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EPubLib", "EPubLib\EPubLib.csproj", "{1E7134C9-A537-42D1-B957-608B14BC1A02}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,18 @@ Global
 		{7A6E6594-DD1B-45A7-8B72-EBF2F9314126}.Release|Win32.ActiveCfg = Release|x86
 		{7A6E6594-DD1B-45A7-8B72-EBF2F9314126}.Release|x86.ActiveCfg = Release|x86
 		{7A6E6594-DD1B-45A7-8B72-EBF2F9314126}.Release|x86.Build.0 = Release|x86
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Release|Win32.ActiveCfg = Release|Any CPU
+		{1E7134C9-A537-42D1-B957-608B14BC1A02}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

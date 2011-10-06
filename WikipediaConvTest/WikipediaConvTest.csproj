@@ -58,6 +58,10 @@
     <Compile Include="SplitFolderTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EPubLib\EPubLib.csproj">
+      <Project>{1E7134C9-A537-42D1-B957-608B14BC1A02}</Project>
+      <Name>EPubLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\WikipediaConv\WikipediaConv.csproj">
       <Project>{A28ED684-0BE8-43E0-817D-6D0E5867B04B}</Project>
       <Name>WikipediaConv</Name>
