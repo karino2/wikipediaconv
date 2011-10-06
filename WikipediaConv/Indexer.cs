@@ -24,10 +24,14 @@ namespace WikipediaConv
     public interface ILongTask
     {
         event ProgressChangedEventHandler ProgressChanged;
-        void CreateIndex();
-        void AbortIndex();
+        void Start();
+        void Abort();
     }
-    public class Indexer : ILongTask
+    public interface ILoadAndDecodeBlocker
+    {
+        string LoadAndDecodeBlock(long[] beginnings, long[] ends);
+    }
+    public class Indexer : ILoadAndDecodeBlocker
     {
         /// <summary>
         /// The maximum hits to return per query
@@ -43,25 +47,37 @@ namespace WikipediaConv
             _action._notify = _bzipReader;
         }
 
-        #region delegate to IndexAction and BzipReader
-        public bool IndexExists { get { return _action.IndexExists; } }
-        public IndexSearcher Searcher { get { return _action.Searcher; } }
+        public ILongTask LongTask { get { return _bzipReader; } }
+
+        #region ILongTask
         public void CreateIndex() { _bzipReader.StartDecodeThread(); }
-        protected virtual void OnProgressChanged(ProgressChangedEventArgs e)
+        public void AbortIndex()
         {
-            _bzipReader.OnProgressChanged(e);
+            _bzipReader.AbortDecoding();
         }
         /// <summary>
         /// Occurs when the indexing is happening and the progress changes
         /// </summary>
-        public event ProgressChangedEventHandler ProgressChanged {
-            add {
+        public event ProgressChangedEventHandler ProgressChanged
+        {
+            add
+            {
                 _bzipReader.ProgressChanged += value;
             }
             remove
             {
                 _bzipReader.ProgressChanged -= value;
             }
+        }
+        #endregion
+
+        #region delegate to IndexAction and BzipReader
+        public bool IndexExists { get { return _action.IndexExists; } }
+        public IndexSearcher Searcher { get { return _action.Searcher; } }
+
+        protected virtual void OnProgressChanged(ProgressChangedEventArgs e)
+        {
+            _bzipReader.OnProgressChanged(e);
         }
         public string FilePath { get { return _bzipReader.FilePath; } }
 
@@ -270,14 +286,9 @@ namespace WikipediaConv
 
         #endregion
 
-        public void AbortIndex()
-        {
-            _bzipReader.AbortDecoding();
-        }
-
         public string File { get { return _bzipReader.FilePath.ToLowerInvariant(); } }
 
-        internal string LoadAndDecodeBlock(long[] beginnings, long[] ends)
+        public string LoadAndDecodeBlock(long[] beginnings, long[] ends)
         {
             return _bzipReader.LoadAndDecodeBlock(beginnings, ends);
         }

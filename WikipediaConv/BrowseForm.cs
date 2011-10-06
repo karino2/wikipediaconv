@@ -482,7 +482,7 @@ namespace WikipediaConv
 
             if (!ixr.IndexExists)
             {
-                if (new ProgressDialog(ixr).ShowDialog(this) != DialogResult.OK)
+                if (new ProgressDialog(ixr.LongTask).ShowDialog(this) != DialogResult.OK)
                 {
                     return;
                 }
@@ -586,5 +586,39 @@ namespace WikipediaConv
         }
 
         #endregion
+
+        private void toEPubButton_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fd = new OpenFileDialog();
+
+            fd.CheckFileExists = true;
+            fd.CheckPathExists = true;
+            fd.DereferenceLinks = true;
+            fd.Multiselect = true;
+            fd.SupportMultiDottedExtensions = true;
+            fd.ValidateNames = true;
+            fd.Filter = Properties.Resources.OpenDumpFilter;
+
+            if (fd.ShowDialog(this) == DialogResult.OK)
+            {
+                foreach (string file in fd.FileNames)
+                {
+                    EPubGenerater gen = new EPubGenerater(file);
+                    if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
+                    {
+                        MessageBox.Show("epub gen cancelled");
+                        return;
+                    }
+                    MessageBox.Show("epub gen success!");
+                    /*
+                if (new ProgressDialog(ixr.LongTask).ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                     * */
+                }
+            }
+
+        }
     }
 }

@@ -5,6 +5,7 @@ using System.Web;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
 using ScrewTurn.Wiki;
+using System.Diagnostics;
 
 namespace WikipediaConv
 {
@@ -22,6 +23,8 @@ namespace WikipediaConv
         /// The indexer this hit belongs to
         /// </summary>
         public readonly Indexer Indexer;
+
+        public ILoadAndDecodeBlocker Decoder { get; set; }
         /// <summary>
         /// The title of the topic
         /// </summary>
@@ -75,6 +78,7 @@ namespace WikipediaConv
         public PageInfo(Indexer ixr, Hit hit)
         {
             Indexer = ixr;
+            Decoder = ixr;
 
             Score = hit.GetScore();
 
@@ -116,8 +120,15 @@ namespace WikipediaConv
                 return formattedContent;
             }
 
-            string raw = Indexer.LoadAndDecodeBlock(Beginnings, Ends);
+            string raw = Decoder.LoadAndDecodeBlock(Beginnings, Ends);
 
+            formattedContent = FormatContent(raw); 
+
+            return formattedContent;
+        }
+
+        public string FormatContent(string raw)
+        {
             string searchfor = String.Format("<id>{0}</id>", TopicId);
 
             int pos = raw.IndexOf(searchfor, StringComparison.InvariantCultureIgnoreCase);
@@ -150,9 +161,8 @@ namespace WikipediaConv
 
             string toFormat = raw.Substring(extractionStart + 1, extractionEnd - extractionStart - 1);
 
-            formattedContent = Formatter.Format(Name, HttpUtility.HtmlDecode(toFormat), this, Settings.IsRTL, out redirectToTopic);
-
-            return formattedContent;
+            string tmp = Formatter.Format(Name, HttpUtility.HtmlDecode(toFormat), this, Settings.IsRTL, out redirectToTopic);
+            return tmp;
         }
 
         public override string ToString()

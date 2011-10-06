@@ -18,6 +18,7 @@ using Lucene.Net.Index;
 using Lucene.Net.Search;
 using RAMDirectory = Lucene.Net.Store.RAMDirectory;
 using FSDirectory = Lucene.Net.Store.FSDirectory;
+using System.Diagnostics;
 
 namespace WikipediaConv
 {
@@ -41,7 +42,7 @@ namespace WikipediaConv
         // This is not Notify. Maybe bat name.
         bool IsActive();
     }
-    public class BzipReader : INotifyDecoder
+    public class BzipReader : INotifyDecoder, ILongTask, ILoadAndDecodeBlocker
     {
 
         IDecodedAction _action;
@@ -63,10 +64,23 @@ namespace WikipediaConv
         /// </summary>
         private string filePath;
         public string FilePath { get { return filePath; } }
+        #region long task
         /// <summary>
         /// Occurs when the indexing is happening and the progress changes
         /// </summary>
         public event ProgressChangedEventHandler ProgressChanged;
+
+        void ILongTask.Start()
+        {
+            StartDecodeThread();
+        }
+        void ILongTask.Abort()
+        {
+            AbortDecoding();
+        }
+        #endregion
+
+
         /// <summary>
         /// The total number of blocks in the file
         /// </summary>
@@ -262,12 +276,15 @@ namespace WikipediaConv
 
                 PostAction();
             }
+                /*
             catch (Exception ex)
             {
                 ReportProgress(0, DecodingProgress.State.Failure, ex.ToString());
 
                 failed = true;
             }
+                 * */
+            finally { }
 
             // Try to release some memory
             FinalizeAction(failed);

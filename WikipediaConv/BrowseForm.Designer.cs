@@ -31,13 +31,21 @@ namespace WikipediaConv
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.MenuStrip menuStrip;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowseForm));
-            System.Windows.Forms.SplitContainer splitContainer1;
-            System.Windows.Forms.StatusStrip statusStrip1;
-            System.Windows.Forms.Timer timer;
             System.Windows.Forms.ToolStripContainer toolStripContainer1;
+            System.Windows.Forms.StatusStrip statusStrip1;
+            System.Windows.Forms.SplitContainer splitContainer1;
             System.Windows.Forms.ToolStrip toolStrip1;
+            System.Windows.Forms.Timer timer;
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.searchStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.hitsBox = new System.Windows.Forms.ListBox();
+            this.webBrowser = new System.Windows.Forms.WebBrowser();
+            this.searchBox = new System.Windows.Forms.ToolStripTextBox();
+            this.goButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.backButton = new System.Windows.Forms.ToolStripButton();
+            this.nextButton = new System.Windows.Forms.ToolStripButton();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -45,29 +53,24 @@ namespace WikipediaConv
             this.rtlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.hitsBox = new System.Windows.Forms.ListBox();
-            this.webBrowser = new System.Windows.Forms.WebBrowser();
-            this.searchStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.searchBox = new System.Windows.Forms.ToolStripTextBox();
-            this.goButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.backButton = new System.Windows.Forms.ToolStripButton();
-            this.nextButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.toEPubButton = new System.Windows.Forms.ToolStripButton();
             menuStrip = new System.Windows.Forms.MenuStrip();
-            splitContainer1 = new System.Windows.Forms.SplitContainer();
-            statusStrip1 = new System.Windows.Forms.StatusStrip();
-            timer = new System.Windows.Forms.Timer(this.components);
             toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
+            statusStrip1 = new System.Windows.Forms.StatusStrip();
+            splitContainer1 = new System.Windows.Forms.SplitContainer();
             toolStrip1 = new System.Windows.Forms.ToolStrip();
+            timer = new System.Windows.Forms.Timer(this.components);
             menuStrip.SuspendLayout();
-            splitContainer1.Panel1.SuspendLayout();
-            splitContainer1.Panel2.SuspendLayout();
-            splitContainer1.SuspendLayout();
-            statusStrip1.SuspendLayout();
             toolStripContainer1.BottomToolStripPanel.SuspendLayout();
             toolStripContainer1.ContentPanel.SuspendLayout();
             toolStripContainer1.TopToolStripPanel.SuspendLayout();
             toolStripContainer1.SuspendLayout();
+            statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(splitContainer1)).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
             toolStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -95,6 +98,118 @@ namespace WikipediaConv
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             resources.ApplyResources(this.openToolStripMenuItem, "openToolStripMenuItem");
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
+            // 
+            // toolStripContainer1
+            // 
+            // 
+            // toolStripContainer1.BottomToolStripPanel
+            // 
+            toolStripContainer1.BottomToolStripPanel.Controls.Add(statusStrip1);
+            // 
+            // toolStripContainer1.ContentPanel
+            // 
+            toolStripContainer1.ContentPanel.Controls.Add(splitContainer1);
+            resources.ApplyResources(toolStripContainer1.ContentPanel, "toolStripContainer1.ContentPanel");
+            resources.ApplyResources(toolStripContainer1, "toolStripContainer1");
+            toolStripContainer1.LeftToolStripPanelVisible = false;
+            toolStripContainer1.Name = "toolStripContainer1";
+            toolStripContainer1.RightToolStripPanelVisible = false;
+            // 
+            // toolStripContainer1.TopToolStripPanel
+            // 
+            toolStripContainer1.TopToolStripPanel.Controls.Add(toolStrip1);
+            // 
+            // statusStrip1
+            // 
+            resources.ApplyResources(statusStrip1, "statusStrip1");
+            statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.searchStatusLabel});
+            statusStrip1.Name = "statusStrip1";
+            // 
+            // searchStatusLabel
+            // 
+            this.searchStatusLabel.Name = "searchStatusLabel";
+            resources.ApplyResources(this.searchStatusLabel, "searchStatusLabel");
+            // 
+            // splitContainer1
+            // 
+            splitContainer1.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::WikipediaConv.Properties.Settings.Default, "SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            resources.ApplyResources(splitContainer1, "splitContainer1");
+            splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            splitContainer1.Panel1.Controls.Add(this.hitsBox);
+            // 
+            // splitContainer1.Panel2
+            // 
+            splitContainer1.Panel2.Controls.Add(this.webBrowser);
+            splitContainer1.SplitterDistance = global::WikipediaConv.Properties.Settings.Default.SplitterDistance;
+            // 
+            // hitsBox
+            // 
+            resources.ApplyResources(this.hitsBox, "hitsBox");
+            this.hitsBox.FormattingEnabled = true;
+            this.hitsBox.Name = "hitsBox";
+            this.hitsBox.SelectedValueChanged += new System.EventHandler(this.hitsBox_SelectedValueChanged);
+            this.hitsBox.SizeChanged += new System.EventHandler(this.hitsBox_SizeChanged);
+            // 
+            // webBrowser
+            // 
+            this.webBrowser.AllowWebBrowserDrop = false;
+            resources.ApplyResources(this.webBrowser, "webBrowser");
+            this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+            this.webBrowser.Name = "webBrowser";
+            this.webBrowser.ScriptErrorsSuppressed = true;
+            // 
+            // toolStrip1
+            // 
+            resources.ApplyResources(toolStrip1, "toolStrip1");
+            toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+            toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.searchBox,
+            this.goButton,
+            this.toolStripSeparator2,
+            this.backButton,
+            this.nextButton,
+            this.toolStripSeparator3,
+            this.toEPubButton});
+            toolStrip1.Name = "toolStrip1";
+            toolStrip1.Stretch = true;
+            // 
+            // searchBox
+            // 
+            resources.ApplyResources(this.searchBox, "searchBox");
+            this.searchBox.AutoToolTip = true;
+            this.searchBox.Name = "searchBox";
+            this.searchBox.TextChanged += new System.EventHandler(this.searchBox_TextChanged);
+            // 
+            // goButton
+            // 
+            this.goButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.goButton, "goButton");
+            this.goButton.Name = "goButton";
+            this.goButton.Click += new System.EventHandler(this.goButton_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            resources.ApplyResources(this.toolStripSeparator2, "toolStripSeparator2");
+            // 
+            // backButton
+            // 
+            this.backButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.backButton, "backButton");
+            this.backButton.Name = "backButton";
+            this.backButton.Click += new System.EventHandler(this.backButton_Click);
+            // 
+            // nextButton
+            // 
+            this.nextButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.nextButton, "nextButton");
+            this.nextButton.Name = "nextButton";
+            this.nextButton.Click += new System.EventHandler(this.nextButton_Click);
             // 
             // closeToolStripMenuItem
             // 
@@ -138,120 +253,22 @@ namespace WikipediaConv
             resources.ApplyResources(this.aboutToolStripMenuItem, "aboutToolStripMenuItem");
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
-            // splitContainer1
-            // 
-            splitContainer1.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::WikipediaConv.Properties.Settings.Default, "SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-            resources.ApplyResources(splitContainer1, "splitContainer1");
-            splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            splitContainer1.Name = "splitContainer1";
-            // 
-            // splitContainer1.Panel1
-            // 
-            splitContainer1.Panel1.Controls.Add(this.hitsBox);
-            // 
-            // splitContainer1.Panel2
-            // 
-            splitContainer1.Panel2.Controls.Add(this.webBrowser);
-            splitContainer1.SplitterDistance = global::WikipediaConv.Properties.Settings.Default.SplitterDistance;
-            // 
-            // hitsBox
-            // 
-            resources.ApplyResources(this.hitsBox, "hitsBox");
-            this.hitsBox.FormattingEnabled = true;
-            this.hitsBox.Name = "hitsBox";
-            this.hitsBox.SizeChanged += new System.EventHandler(this.hitsBox_SizeChanged);
-            this.hitsBox.SelectedValueChanged += new System.EventHandler(this.hitsBox_SelectedValueChanged);
-            // 
-            // webBrowser
-            // 
-            this.webBrowser.AllowWebBrowserDrop = false;
-            resources.ApplyResources(this.webBrowser, "webBrowser");
-            this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
-            this.webBrowser.Name = "webBrowser";
-            this.webBrowser.ScriptErrorsSuppressed = true;
-            // 
-            // statusStrip1
-            // 
-            resources.ApplyResources(statusStrip1, "statusStrip1");
-            statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.searchStatusLabel});
-            statusStrip1.Name = "statusStrip1";
-            // 
-            // searchStatusLabel
-            // 
-            this.searchStatusLabel.Name = "searchStatusLabel";
-            resources.ApplyResources(this.searchStatusLabel, "searchStatusLabel");
-            // 
             // timer
             // 
             timer.Enabled = true;
             timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
-            // toolStripContainer1
+            // toolStripSeparator3
             // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            resources.ApplyResources(this.toolStripSeparator3, "toolStripSeparator3");
             // 
-            // toolStripContainer1.BottomToolStripPanel
+            // toEPubButton
             // 
-            toolStripContainer1.BottomToolStripPanel.Controls.Add(statusStrip1);
-            // 
-            // toolStripContainer1.ContentPanel
-            // 
-            toolStripContainer1.ContentPanel.Controls.Add(splitContainer1);
-            resources.ApplyResources(toolStripContainer1.ContentPanel, "toolStripContainer1.ContentPanel");
-            resources.ApplyResources(toolStripContainer1, "toolStripContainer1");
-            toolStripContainer1.LeftToolStripPanelVisible = false;
-            toolStripContainer1.Name = "toolStripContainer1";
-            toolStripContainer1.RightToolStripPanelVisible = false;
-            // 
-            // toolStripContainer1.TopToolStripPanel
-            // 
-            toolStripContainer1.TopToolStripPanel.Controls.Add(toolStrip1);
-            // 
-            // toolStrip1
-            // 
-            resources.ApplyResources(toolStrip1, "toolStrip1");
-            toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.searchBox,
-            this.goButton,
-            this.toolStripSeparator2,
-            this.backButton,
-            this.nextButton});
-            toolStrip1.Name = "toolStrip1";
-            toolStrip1.Stretch = true;
-            // 
-            // searchBox
-            // 
-            resources.ApplyResources(this.searchBox, "searchBox");
-            this.searchBox.AutoToolTip = true;
-            this.searchBox.Name = "searchBox";
-            this.searchBox.TextChanged += new System.EventHandler(this.searchBox_TextChanged);
-            // 
-            // goButton
-            // 
-            this.goButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            resources.ApplyResources(this.goButton, "goButton");
-            this.goButton.Name = "goButton";
-            this.goButton.Click += new System.EventHandler(this.goButton_Click);
-            // 
-            // toolStripSeparator2
-            // 
-            this.toolStripSeparator2.Name = "toolStripSeparator2";
-            resources.ApplyResources(this.toolStripSeparator2, "toolStripSeparator2");
-            // 
-            // backButton
-            // 
-            this.backButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            resources.ApplyResources(this.backButton, "backButton");
-            this.backButton.Name = "backButton";
-            this.backButton.Click += new System.EventHandler(this.backButton_Click);
-            // 
-            // nextButton
-            // 
-            this.nextButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            resources.ApplyResources(this.nextButton, "nextButton");
-            this.nextButton.Name = "nextButton";
-            this.nextButton.Click += new System.EventHandler(this.nextButton_Click);
+            this.toEPubButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.toEPubButton, "toEPubButton");
+            this.toEPubButton.Name = "toEPubButton";
+            this.toEPubButton.Click += new System.EventHandler(this.toEPubButton_Click);
             // 
             // BrowseForm
             // 
@@ -265,11 +282,6 @@ namespace WikipediaConv
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BrowseForm_FormClosing);
             menuStrip.ResumeLayout(false);
             menuStrip.PerformLayout();
-            splitContainer1.Panel1.ResumeLayout(false);
-            splitContainer1.Panel2.ResumeLayout(false);
-            splitContainer1.ResumeLayout(false);
-            statusStrip1.ResumeLayout(false);
-            statusStrip1.PerformLayout();
             toolStripContainer1.BottomToolStripPanel.ResumeLayout(false);
             toolStripContainer1.BottomToolStripPanel.PerformLayout();
             toolStripContainer1.ContentPanel.ResumeLayout(false);
@@ -277,6 +289,12 @@ namespace WikipediaConv
             toolStripContainer1.TopToolStripPanel.PerformLayout();
             toolStripContainer1.ResumeLayout(false);
             toolStripContainer1.PerformLayout();
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(splitContainer1)).EndInit();
+            splitContainer1.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -303,6 +321,8 @@ namespace WikipediaConv
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripButton backButton;
         private System.Windows.Forms.ToolStripButton nextButton;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripButton toEPubButton;
 
     }
 }

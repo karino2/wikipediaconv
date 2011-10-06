@@ -62,6 +62,8 @@
     </Compile>
     <Compile Include="bzip2.cs" />
     <Compile Include="BzipReader.cs" />
+    <Compile Include="EPubGenerater.cs" />
+    <Compile Include="EPubGeneraterAction.cs" />
     <Compile Include="ForestWalker.cs" />
     <Compile Include="ForestNode.cs" />
     <Compile Include="Formatter.cs" />

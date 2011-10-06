@@ -36,7 +36,7 @@ namespace WikipediaConv
 
         private void ProgressDialog_Shown(object sender, EventArgs e)
         {
-            ltask.CreateIndex();
+            ltask.Start();
 
             indexingRunning = true;
         }
@@ -49,7 +49,7 @@ namespace WikipediaConv
 
                 textBox.AppendText(Properties.Resources.AbortingIndexing + Environment.NewLine);
 
-                ltask.AbortIndex();
+                ltask.Abort();
             }
             else
             {
