@@ -5,7 +5,7 @@ using System.Text;
 
 namespace WikipediaConv
 {
-    class ForestWalker<E> : IEnumerator<ForestNode<E>> 
+    public class ForestWalker<E> : IEnumerator<ForestNode<E>> 
         where E : class
     {
         ForestNode<E> _root;
@@ -16,13 +16,18 @@ namespace WikipediaConv
             _root = root;
         }
 
+        public IEnumerator<ForestNode<E>> GetEnumerator()
+        {
+            return this;
+        }
+
 
         public bool HasNext
         {
             get
             {
                 return (_current == null) || !(_current.CurrentEdge == ForestNode<E>.Edge.Trailing &&
-                                _current.Element == _root.Element);
+                                _current.ElementEquals(_root.Element));
             }
         }
 
@@ -52,6 +57,8 @@ namespace WikipediaConv
             if (parent == null)
                 throw new Exception("No next node, never reached here");
             int curIndex = _current.ChildIndex;
+            if (curIndex == -1)
+                throw new Exception("orphan node, invalid");
             if (curIndex < parent.ChildCount - 1)
             {
                 _current = parent.Child(ForestNode < E >.Edge.Leading, curIndex + 1);

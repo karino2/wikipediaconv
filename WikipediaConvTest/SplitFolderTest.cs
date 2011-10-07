@@ -13,6 +13,7 @@ namespace WikipediaConvTest
     [TestFixture]
     public class SplitFolderTest
     {
+        #region epub hello
         // [Test]
         public void TestHelloEPub()
         {
@@ -44,6 +45,7 @@ namespace WikipediaConvTest
             //and then package/zip everything into the proper format. 
             book.Save(@"output.epub");
         }
+        #endregion
 
         [Test]
         public void TestGetFileNameHeadUntilCurrent_Root()
@@ -70,6 +72,86 @@ namespace WikipediaConvTest
             string expected = @"I:\hoge\i";
             SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"));
             string actual = sf.GetMatchedSubdirectoryPath(new FileInfo(@"I:hoge\ika.txt"));
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestGetMatchedSubdirectoryPath_SecondLevel()
+        {
+            string expected = @"I:\hoge\i\k";
+            SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"));
+            sf.Current = new DirectoryInfo(@"I:\hoge\i");
+            string actual = sf.GetMatchedSubdirectoryPath(new FileInfo(@"I:\hoge\ika.txt"));
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestGetMatchedSubdirectoryPath_CantMoveMore()
+        {
+            string expected = @"I:\hoge\a";
+            SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"));
+            sf.Current = new DirectoryInfo(@"I:\hoge\a");
+            string actual = sf.GetMatchedSubdirectoryPath(new FileInfo(@"I:\hoge\a.html"));
+
+            Assert.AreEqual(expected, actual);
+        }
+
+
+        [Test]
+        public void TestFileNameToSortKey_Number()
+        {
+            string expected = @"worldseries";
+            string input = @"I:hoge\\1903 World Series.html";
+            VerifyFileNameToSortKey(input, expected);
+        }
+
+        [Test]
+        public void TestFileNameToSortKey_Dot()
+        {
+            string expected = @"babyonemoretime";
+            string input = @"I:h\\...Baby One More Time.html";
+            VerifyFileNameToSortKey(input, expected);
+        }
+
+        [Test]
+        public void TestFileNameToSortKey_Space()
+        {
+            string expected = @"acappella";
+            string input = @"I:hoge\\A cappella.html";
+            VerifyFileNameToSortKey(input, expected);
+        }
+
+
+        [Test]
+        public void TestFileNameToSortKey_Quote()
+        {
+            string input = @"I:hoge\\&quot;Love and Theft&quot;.html";
+            string expected = @"loveandtheft";
+            VerifyFileNameToSortKey(input, expected);
+        }
+
+        [Test]
+        public void TestFileNameToSortKey_Brace()
+        {
+            string input = @"I:hoge\\Liberal Party (UK).html";
+            string expected = @"liberalpartyuk";
+            VerifyFileNameToSortKey(input, expected);
+        }
+
+        
+        // [Test]
+        public void RunSplitFolder()
+        {
+            /*
+            SplitFolder spliter = new SplitFolder(new DirectoryInfo(@"../../../../ePub2"));
+            spliter.Split();
+             * */
+        }
+
+        private static void VerifyFileNameToSortKey(string input, string expected)
+        {
+            string actual = SplitFolder.FileNameToSortKey(new FileInfo(input));
             Assert.AreEqual(expected, actual);
         }
     }

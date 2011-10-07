@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace WikipediaConv
 {
@@ -18,7 +19,7 @@ namespace WikipediaConv
         }
 
         DirectoryInfo Base { get; set; }
-        DirectoryInfo Current { get; set; }
+        internal DirectoryInfo Current { get; set; }
         public int UpperFileLimit { get; set; }
 
 
@@ -30,6 +31,7 @@ namespace WikipediaConv
         {
             Base = baseDi;
             Current = current;
+            MaxFileNum = 100;
         }
 
         public bool NeedSplit
@@ -40,12 +42,57 @@ namespace WikipediaConv
             }
         }
 
+        static int ChildIndex(DirectoryInfo di)
+        {
+            DirectoryInfo[] dirs = di.Parent.GetDirectories();
+            for (int i = 0; i < dirs.Length; i++)
+            {
+                if (dirs[i].FullName == di.FullName)
+                    return i;
+            }
+            return -1;
+        }
+
         public void Split()
         {
             if (SubFolderExists)
                 throw new Exception("Already splited");
-            CreateSubdirectories();
-            SortToSubdirectories();
+            ForestNode<DirectoryInfo> root = DirectoryForest(Current);
+            var walker = root.Walker;
+            foreach(var node in walker)
+            {
+                if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
+                    continue;
+                Current = node.Element;
+                if (TooMuchFile)
+                {
+                    CreateSubdirectories();
+                    SortToSubdirectories();
+                    RemoveUnusedDirectories();
+                }
+            }
+
+        }
+
+        public static ForestNode<DirectoryInfo> DirectoryForest(DirectoryInfo cur)
+        {
+            ForestNode<DirectoryInfo> root = new ForestNode<DirectoryInfo>(ForestNode<DirectoryInfo>.Edge.Leading,
+                cur,
+                (x, i) => x.GetDirectories()[i],
+                (x) => x.Parent,
+                (x) => x.GetDirectories().Length,
+                ChildIndex,
+                (x, y) => x.FullName == y.FullName);
+            return root;
+        }
+
+        private void RemoveUnusedDirectories()
+        {
+            foreach (var dir in Current.GetDirectories())
+            {
+                if (dir.GetFiles().Length == 0)
+                    dir.Delete();
+            }
         }
 
         internal virtual void MoveTo(FileInfo target, string destPath)
@@ -86,13 +133,22 @@ namespace WikipediaConv
         internal string GetMatchedSubdirectoryPath(FileInfo file)
         {
             string untilCur = FileNameHeadUntilCurrent;
-            if (file.Name == untilCur)
-                return untilCur;
-            Debug.Assert(file.Name.StartsWith(untilCur));
-            string nextHead = file.Name.Substring(untilCur.Length, 1);
+            string key = FileNameToSortKey(file);
+            if (key == untilCur)
+                return Current.FullName;
+            Debug.Assert(key.StartsWith(untilCur));
+            string nextHead = key.Substring(untilCur.Length, 1);
             if(InsideNormalRange(nextHead))
-                return Path.Combine(Current.FullName, file.Name.Substring(0, untilCur.Length + 1));
+                return Path.Combine(Current.FullName, key.Substring(untilCur.Length, 1));
             throw new Exception("NYI: special character handling.");
+        }
+
+        static internal string FileNameToSortKey(FileInfo file)
+        {
+            var fname = Path.GetFileNameWithoutExtension(file.Name);
+            fname = Regex.Replace(fname, "&[^;]*;", "");
+            fname = Regex.Replace(fname, "[^a-zA-Z]", "");
+            return fname.ToLowerInvariant().Replace(" ", "");
         }
 
         private bool InsideNormalRange(string nextHead)
@@ -102,15 +158,16 @@ namespace WikipediaConv
 
         void CreateSubdirectories()
         {
-            for (char c = 'A'; c <= 'Z'; c++)
+            for (char c = 'a'; c <= 'z'; c++)
             {
                 CreateSubdirectory(c);
             }
+            // CreateSubdirectory('X');
         }
 
         internal virtual void CreateSubdirectory(char c)
         {
-            Current.CreateSubdirectory(Path.Combine(Current.FullName, c.ToString()));
+            Current.CreateSubdirectory(c.ToString());
         }
 
         public bool SubFolderExists
@@ -121,5 +178,14 @@ namespace WikipediaConv
             }
         }
 
+        public int MaxFileNum { get; set; }
+
+        public bool TooMuchFile 
+        {
+            get
+            {
+                return Current.GetFiles("*.html").Length > MaxFileNum;
+            }
+        }
     }
 }
