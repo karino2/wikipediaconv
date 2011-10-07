@@ -47,7 +47,7 @@ namespace WikipediaConv
             int end = headContent.IndexOf("</title>");
             if (end == -1)
                 return "";
-            return headContent.Substring(beg, end);
+            return headContent.Substring(beg, end-beg);
         }
     }
 }

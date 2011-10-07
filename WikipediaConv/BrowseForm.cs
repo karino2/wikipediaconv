@@ -443,16 +443,7 @@ namespace WikipediaConv
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog fd = new OpenFileDialog();
-
-            fd.CheckFileExists = true;
-            fd.CheckPathExists = true;
-            fd.DereferenceLinks = true;
-            fd.Multiselect = true;
-            fd.SupportMultiDottedExtensions = true;
-            fd.ValidateNames = true;
-            fd.Filter = Properties.Resources.OpenDumpFilter;
-
+            OpenFileDialog fd = CreateIndexPickupDialog();
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
                 foreach (string file in fd.FileNames)
@@ -467,6 +458,21 @@ namespace WikipediaConv
 
                 SyncCloseMenuItem();
             }
+        }
+
+        private static OpenFileDialog CreateIndexPickupDialog()
+        {
+            OpenFileDialog fd = new OpenFileDialog();
+
+            fd.CheckFileExists = true;
+            fd.CheckPathExists = true;
+            fd.DereferenceLinks = true;
+            fd.Multiselect = true;
+            fd.SupportMultiDottedExtensions = true;
+            fd.ValidateNames = true;
+            fd.Filter = Properties.Resources.OpenDumpFilter;
+
+            return fd;
         }
 
         private void LoadIndexer(string file)
@@ -587,35 +593,160 @@ namespace WikipediaConv
 
         #endregion
 
+        public class SplitTask : ILongTask
+        {
+            // no progress information now.
+            public event ProgressChangedEventHandler ProgressChanged;
+
+            SplitFolder _splitter;
+            public SplitTask(DirectoryInfo workDir)
+            {
+                _splitter = new SplitFolder(workDir);
+            }
+
+            public void Start()
+            {
+                _abort = false;
+                ReportProgress(0, DecodingProgress.State.Running, "start split");
+                _splitter.StartSplit();
+                int count = 0;
+                while (_splitter.IsRunning)
+                {
+                    _splitter.SplitOne();
+                    ReportProgress(0, DecodingProgress.State.Running, "split: " + count++);
+                    if (_abort)
+                    {
+                        ReportProgress(100, DecodingProgress.State.Failure, "abort split");
+                        return;
+                    }
+                }
+                ReportProgress(100, DecodingProgress.State.Finished, "finish split");
+            }
+
+            bool _abort = false;
+
+            public void Abort()
+            {
+                _abort = true;
+            }
+
+            public void ReportProgress(int percentage, DecodingProgress.State state, string message)
+            {
+                DecodingProgress ip = CreateProgress(message, state);
+
+                ProgressChanged(this, new ProgressChangedEventArgs(percentage, ip));
+            }
+
+
+        }
+
+        internal static DecodingProgress CreateProgress(string message, DecodingProgress.State state)
+        {
+            DecodingProgress ip = new DecodingProgress();
+            ip.Message = message;
+            ip.DecodingState = state;
+            ip.ETA = "n/a";
+            return ip;
+        }
+
+        public class GenerateEpubTask : ILongTask
+        {
+            // no progress information now.
+            public event ProgressChangedEventHandler ProgressChanged;
+            ForestWalker<DirectoryInfo> _walker;
+
+            bool _abort = false;
+            int _epubChapterNum = 10;
+            EPubArchiver _archiver;
+
+            public GenerateEpubTask(DirectoryInfo workDir)
+            {
+                _archiver = new EPubArchiver();
+                var node =  SplitFolder.DirectoryForest(workDir);
+                _walker = node.Walker;
+            }
+
+            public void Start()
+            {
+                ReportProgress(0, DecodingProgress.State.Running, "start epub archive");
+                int count = 0;
+                _abort = false;
+                foreach (var node in _walker)
+                {
+                    if (_abort)
+                        return;
+                    if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
+                        continue;
+                    var di = node.Element;
+                    FileInfo[] fis = di.GetFiles("*.html");
+                    List<FileInfo> flist = new List<FileInfo>();
+                    for(int start = 0; start < fis.Length; start+=_epubChapterNum)
+                    {
+                        flist.Clear();
+                        CopyRange(flist, fis, start, _epubChapterNum);
+                        string epubName = Path.GetFileNameWithoutExtension(flist[0].Name) + "-" +
+                            Path.GetFileNameWithoutExtension(flist[flist.Count-1].Name) + ".epub";
+
+
+                        _archiver.Archive(flist, Path.Combine(fis[0].Directory.FullName, epubName));
+                        flist.ForEach(fi => fi.Delete());
+                        ReportProgress(0, DecodingProgress.State.Running, "epub: " + count++);
+                    }
+
+                }
+                ReportProgress(0, DecodingProgress.State.Finished, "finish epub archive");
+            }
+
+            private void CopyRange(List<FileInfo> flist, FileInfo[] fis, int start, int num)
+            {
+                int range = Math.Min(start + num, fis.Length);
+                for (int i = start; i < range; i++)
+                {
+                    flist.Add(fis[i]);
+                }
+            }
+
+            public void Abort()
+            {
+                _abort = true;
+            }
+            public void ReportProgress(int percentage, DecodingProgress.State state, string message)
+            {
+                DecodingProgress ip = CreateProgress(message, state);
+
+                ProgressChanged(this, new ProgressChangedEventArgs(percentage, ip));
+            }
+        }
+
         private void toEPubButton_Click(object sender, EventArgs e)
         {
-            OpenFileDialog fd = new OpenFileDialog();
-
-            fd.CheckFileExists = true;
-            fd.CheckPathExists = true;
-            fd.DereferenceLinks = true;
-            fd.Multiselect = true;
-            fd.SupportMultiDottedExtensions = true;
-            fd.ValidateNames = true;
-            fd.Filter = Properties.Resources.OpenDumpFilter;
+            OpenFileDialog fd = CreateIndexPickupDialog();
+            fd.Multiselect = false;
 
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
-                foreach (string file in fd.FileNames)
+                string file = fd.FileName;
+                HtmlGenerater gen = new HtmlGenerater(file);
+                if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
-                    HtmlGenerater gen = new HtmlGenerater(file);
-                    if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
-                    {
-                        MessageBox.Show("epub gen cancelled");
-                        return;
-                    }
-                    MessageBox.Show("epub gen success!");
-                    /*
-                if (new ProgressDialog(ixr.LongTask).ShowDialog(this) != DialogResult.OK)
+                    MessageBox.Show("generate html cancelled");
+                    // tmp fall through. 
+                    // return;
+                }
+                // MessageBox.Show("epub gen success!");
+
+                SplitTask split = new SplitTask(gen.WorkingFolder);
+                if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
                 {
+                    MessageBox.Show("split folder cancelled");
                     return;
                 }
-                     * */
+
+                GenerateEpubTask epub = new GenerateEpubTask(gen.WorkingFolder);
+                if (DialogResult.OK != new ProgressDialog(epub).ShowDialog(this))
+                {
+                    MessageBox.Show("generate epub cancelled");
+                    return;
                 }
             }
 

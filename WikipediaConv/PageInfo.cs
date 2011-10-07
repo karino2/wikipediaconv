@@ -11,6 +11,12 @@ namespace WikipediaConv
 {
     public class PageInfo
     {
+        public class RedirectException : Exception {
+            public RedirectException(string message)
+                : base(message)
+            {
+            }
+        }
         /// <summary>
         /// The cached formatted content
         /// </summary>
@@ -68,7 +74,10 @@ namespace WikipediaConv
             Name = title;
             Beginnings = begin;
             Ends = end;
+            TreatRedirectException = false;
         }
+
+        public bool TreatRedirectException { get; set; }
 
         /// <summary>
         /// This constructor is used while retrieving the hit from the dump
@@ -77,6 +86,7 @@ namespace WikipediaConv
         /// <param name="hit">The Lucene Hit object</param>
         public PageInfo(Indexer ixr, Hit hit)
         {
+            TreatRedirectException = false;
             Indexer = ixr;
             Decoder = ixr;
 
@@ -162,6 +172,8 @@ namespace WikipediaConv
             string toFormat = raw.Substring(extractionStart + 1, extractionEnd - extractionStart - 1);
 
             string tmp = Formatter.Format(Name, HttpUtility.HtmlDecode(toFormat), this, Settings.IsRTL, out redirectToTopic);
+            if (redirectToTopic != null && TreatRedirectException)
+                throw new RedirectException("redirected, name=" + Name + " as " + redirectToTopic);
             return tmp;
         }
 

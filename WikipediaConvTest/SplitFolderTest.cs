@@ -48,7 +48,7 @@ namespace WikipediaConvTest
         #endregion
 
         [Test]
-        public void TestGetFileNameHeadUntilCurrent_Root()
+        public void TestFileNameHeadUntilCurrent_Root()
         {
             string expected = "";
             SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"));
@@ -57,10 +57,20 @@ namespace WikipediaConvTest
         }
 
         [Test]
-        public void TestGetFileNameHeadUntilCurrent_TwoLevel()
+        public void TestFileNameHeadUntilCurrent_TwoLevel()
         {
             string expected = "ika";
             SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"), new DirectoryInfo(@"I:\hoge\i\k\a"));
+            string actual = sf.FileNameHeadUntilCurrent;
+            Assert.AreEqual(expected, actual);
+        }
+
+
+        [Test]
+        public void TestFileNameHeadUntilCurrent_RootEndWithBackSlash()
+        {
+            string expected = "ika";
+            SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge\"), new DirectoryInfo(@"I:\hoge\i\k\a\"));
             string actual = sf.FileNameHeadUntilCurrent;
             Assert.AreEqual(expected, actual);
         }

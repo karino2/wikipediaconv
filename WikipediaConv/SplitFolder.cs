@@ -29,7 +29,8 @@ namespace WikipediaConv
 
         public SplitFolder(DirectoryInfo baseDi, DirectoryInfo current)
         {
-            Base = baseDi;
+            Abort = false;
+            Base = new DirectoryInfo(baseDi.FullName.TrimEnd('\\'));
             Current = current;
             MaxFileNum = 100;
         }
@@ -53,14 +54,50 @@ namespace WikipediaConv
             return -1;
         }
 
+        public bool Abort { get; set; }
+
+        ForestWalker<DirectoryInfo> _walker;
+
+        public void StartSplit()
+        {
+            Abort = false;
+            ForestNode<DirectoryInfo> root = DirectoryForest(Current);
+            _walker = root.Walker;
+        }
+
+        public bool IsRunning
+        {
+            get
+            {
+                return _walker.HasNext;
+            }
+        }
+
+        // sometime, not split one, bug don't care.
+        public void SplitOne()
+        {
+            _walker.MoveNext();
+            var node = _walker.Current;
+            if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
+                return; // continue;
+            Current = node.Element;
+            if (TooMuchFile)
+            {
+                CreateSubdirectories();
+                SortToSubdirectories();
+                RemoveUnusedDirectories();
+            }
+        }
+
         public void Split()
         {
-            if (SubFolderExists)
-                throw new Exception("Already splited");
+            Abort = false;
             ForestNode<DirectoryInfo> root = DirectoryForest(Current);
             var walker = root.Walker;
             foreach(var node in walker)
             {
+                if (Abort)
+                    return;
                 if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
                     continue;
                 Current = node.Element;
@@ -82,7 +119,7 @@ namespace WikipediaConv
                 (x) => x.Parent,
                 (x) => x.GetDirectories().Length,
                 ChildIndex,
-                (x, y) => x.FullName == y.FullName);
+                (x, y) => x.FullName.TrimEnd(new char[]{'\\', '/'}) == y.FullName.TrimEnd(new char[]{'\\', '/'}));
             return root;
         }
 
@@ -158,6 +195,8 @@ namespace WikipediaConv
 
         void CreateSubdirectories()
         {
+            if (SubFolderExists)
+                return; // we should ensure folder name, but OK for normal case.
             for (char c = 'a'; c <= 'z'; c++)
             {
                 CreateSubdirectory(c);

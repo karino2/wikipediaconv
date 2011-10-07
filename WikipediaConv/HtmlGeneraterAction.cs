@@ -21,15 +21,24 @@ namespace WikipediaConv
 
         internal DirectoryInfo TargetPath(PageInfo pi)
         {
-            DirectoryInfo di =  new DirectoryInfo(Path.Combine(_base.FullName, "ePub/"));
-            if (!di.Exists)
+            return WorkingFolder;
+        }
+
+        public DirectoryInfo WorkingFolder
+        {
+            get
             {
-                di.Create();
+                DirectoryInfo di = new DirectoryInfo(Path.Combine(_base.FullName, "ePub/"));
+                if (!di.Exists)
+                {
+                    di.Create();
+                }
+                return di;
             }
-            return di;
         }
 
         public ILoadAndDecodeBlocker Decoder { get; set; }
+        string _path;
 
         public void Action(object state)
         {
@@ -43,17 +52,24 @@ namespace WikipediaConv
 
             try
             {
+                pi.TreatRedirectException = true;
                 string formattedContent = pi.GetFormattedContent();
                 DirectoryInfo di = TargetPath(pi);
                 string path = GetHtmlName(pi, di);
+                _path = path; // for debug.
                 using (StreamWriter sw = new StreamWriter(path))
                 {
                     sw.Write(formattedContent);
                 }
             }
+            catch (PageInfo.RedirectException re)
+            {
+                Debug.WriteLine("skip redirect: (" + re.Message + ")");
+            }
             catch (Exception ex)
             {
                 Debugger.Break();
+                Debug.WriteLine("path:" + _path);
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace.ToString());
             }
