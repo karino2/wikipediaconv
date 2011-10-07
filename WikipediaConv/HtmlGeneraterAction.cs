@@ -7,11 +7,11 @@ using System.Diagnostics;
 
 namespace WikipediaConv
 {
-    public class EPubGeneraterAction : IDecodedAction
+    public class HtmlGeneraterAction : IDecodedAction
     {
         DirectoryInfo _base;
         internal INotifyDecoder _notify;
-        public EPubGeneraterAction(string bzipPath)
+        public HtmlGeneraterAction(string bzipPath)
         {
             _base = new FileInfo(bzipPath).Directory;
         }

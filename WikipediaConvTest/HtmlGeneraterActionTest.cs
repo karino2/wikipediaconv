@@ -8,7 +8,7 @@ using WikipediaConv;
 namespace WikipediaConvTest
 {
     [TestFixture]
-    public class EPubGeneraterActionTest
+    public class HtmlGeneraterActionTest
     {
         [Test]
         public void TestWikiNameToFileBaseName_Slash()
@@ -74,7 +74,7 @@ namespace WikipediaConvTest
 
         private static void VerifyWikinameToFileBaseName(string expect, string input)
         {
-            string actual = EPubGeneraterAction.WikiNameToFileBaseName(input);
+            string actual = HtmlGeneraterAction.WikiNameToFileBaseName(input);
             Assert.AreEqual(expect, actual);
         }
     }

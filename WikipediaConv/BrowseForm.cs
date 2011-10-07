@@ -603,7 +603,7 @@ namespace WikipediaConv
             {
                 foreach (string file in fd.FileNames)
                 {
-                    EPubGenerater gen = new EPubGenerater(file);
+                    HtmlGenerater gen = new HtmlGenerater(file);
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                     {
                         MessageBox.Show("epub gen cancelled");

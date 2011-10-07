@@ -5,13 +5,13 @@ using System.Text;
 
 namespace WikipediaConv
 {
-    public class EPubGenerater
+    public class HtmlGenerater
     {
         BzipReader _bzipReader;
-        EPubGeneraterAction _action;
-        public EPubGenerater(string bzipPath)
+        HtmlGeneraterAction _action;
+        public HtmlGenerater(string bzipPath)
         {
-            _action = new EPubGeneraterAction(bzipPath);
+            _action = new HtmlGeneraterAction(bzipPath);
             _bzipReader = new BzipReader(bzipPath, _action);
             _action.Decoder = _bzipReader;
             _action._notify = _bzipReader;
