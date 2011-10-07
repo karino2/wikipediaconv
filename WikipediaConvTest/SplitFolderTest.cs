@@ -144,6 +144,11 @@ namespace WikipediaConvTest
         public void RunSplitFolder()
         {
             /*
+            EPubArchiver archiver = new EPubArchiver();
+            DirectoryInfo di = new DirectoryInfo(@"../../../../test");
+            archiver.Archive(di.GetFiles("*.html"), Path.Combine(di.FullName, "test.epub"));
+             * */
+            /*
             SplitFolder spliter = new SplitFolder(new DirectoryInfo(@"../../../../ePub2"));
             spliter.Split();
              * */
