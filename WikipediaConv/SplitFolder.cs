@@ -155,7 +155,7 @@ namespace WikipediaConv
                     return "";
                 List<String> dirs = new List<String>();
                 DirectoryInfo di = Current;
-                while (Base.FullName != di.FullName)
+                while (Base.FullName.TrimEnd(new char[] { '\\', '/' }) != di.FullName.TrimEnd(new char[] { '\\', '/' }))
                 {
                     dirs.Add(di.Name);
                     di = di.Parent;

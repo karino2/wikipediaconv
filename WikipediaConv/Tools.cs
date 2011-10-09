@@ -27,6 +27,11 @@ namespace ScrewTurn.Wiki
 			return HttpUtility.UrlEncode(input).Replace("+", "%20");
 		}
 
+        public static string AttributeEncode(string input)
+        {
+            return HttpUtility.HtmlAttributeEncode(input);
+        }
+
         /// <summary>
         /// Executes URL-encoding, avoiding to use '+' for spaces.
         /// </summary>

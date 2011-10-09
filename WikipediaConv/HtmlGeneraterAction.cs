@@ -88,6 +88,8 @@ namespace WikipediaConv
         internal static string WikiNameToFileBaseName(string wikiName)
         {
             string baseName = wikiName.Replace("/", "／").Replace(">", "＞").Replace("<", "＜").Replace("?", "？").Replace(":", "：").Replace("\"", "”").Replace("\\", "￥").Replace("*", "＊").Replace("|", "｜").Replace(";", "；");
+            if (baseName == "Con")
+                return "Con_";
             return baseName;
         }
 

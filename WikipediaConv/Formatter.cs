@@ -48,6 +48,7 @@ namespace ScrewTurn.Wiki
 		private static Regex username = new Regex(@"\{username\}", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 		private static Regex javascript = new Regex(@"\<script.*?\>.*?\<\/script\>", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant);
         private static Regex math = new Regex(@"\<math\>(.|\n|\r)+?\<\/math\>", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static Regex ignoreTags = new Regex(@"\<(\/)?ref\>", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         private static string tocTitlePlaceHolder = String.Empty;
 		private static string upReplacement = "GetFile.aspx?File=";
@@ -520,6 +521,19 @@ namespace ScrewTurn.Wiki
 				match = code.Match(sb.ToString(), end);
 			}
 
+            // remove <ref> and </ref> because in [[Alessandro Algardi]],
+            // <i>....<ref>..</i>...<i> happens.
+            match = ignoreTags.Match(sb.ToString());
+            while (match.Success)
+            {
+                if (!IsNoWikied(match.Index, noWikiBegin, noWikiEnd, out end))
+                {
+                    sb.Remove(match.Index, match.Length);
+                }
+                ComputeNoWiki(sb.ToString(), ref noWikiBegin, ref noWikiEnd);
+                match = ignoreTags.Match(sb.ToString(), end);
+            }
+
 			string h;
 
 			// Hx: detection pass (used for the TOC generation and section editing)
@@ -692,7 +706,7 @@ namespace ScrewTurn.Wiki
 				for(int i = 0; i < attachments.Count; i++) {
 					sb.Append(@"<a href=""");
 					sb.Append(upReplacement);
-					sb.Append(Tools.UrlEncode(attachments[i]));
+					sb.Append(Tools.AttributeEncode(Tools.UrlEncode(attachments[i])));
 					sb.Append(@""" class=""attachment"">");
 					sb.Append(attachments[i]);
 					sb.Append("</a>");
@@ -825,9 +839,11 @@ namespace ScrewTurn.Wiki
 				sb.Append(@" href=""");
 				sb.Append(a);
 				sb.Append(@""" title=""");
-				if(!isImage && n.Length > 0) sb.Append(nstripped);
-				else if(isImage && imageTitle.Length > 0) sb.Append(imageTitleStripped);
-				else sb.Append(a.Substring(1));
+                string title;
+				if(!isImage && n.Length > 0) title = nstripped;
+				else if(isImage && imageTitle.Length > 0) title = imageTitleStripped;
+				else title = a.Substring(1);
+                sb.Append(Tools.AttributeEncode(title));
 				sb.Append(@""">");
 				if(n.Length > 0) sb.Append(n);
 				else sb.Append(a.Substring(1));
@@ -845,11 +861,13 @@ namespace ScrewTurn.Wiki
 				sb.Append(@"<a");
 				if(!isImage) sb.Append(@" class=""externallink""");
 				sb.Append(@" href=""");
-				sb.Append(a);
+                AppendAttr(sb, a);
 				sb.Append(@""" title=""");
-				if(!isImage && n.Length > 0) sb.Append(nstripped);
-				else if(isImage && imageTitle.Length > 0) sb.Append(imageTitleStripped);
-				else sb.Append(a);
+                string title;
+				if(!isImage && n.Length > 0) title = nstripped;
+				else if(isImage && imageTitle.Length > 0) title = imageTitleStripped;
+				else title = a;
+                AppendAttr(sb, title);
 				sb.Append(@""" target=""_blank"">");
 				if(n.Length > 0) sb.Append(n);
 				else sb.Append(a);
@@ -860,11 +878,13 @@ namespace ScrewTurn.Wiki
 				sb.Append(@"<a");
 				if(!isImage) sb.Append(@" class=""externallink""");
 				sb.Append(@" href=""file://///");
-				sb.Append(a.Substring(2));
+				AppendAttr(sb, a.Substring(2));
 				sb.Append(@""" title=""");
-				if(!isImage && n.Length > 0) sb.Append(nstripped);
-				else if(isImage && imageTitle.Length > 0) sb.Append(imageTitleStripped);
-				else sb.Append(a);
+                string title;
+				if(!isImage && n.Length > 0) title = nstripped;
+				else if(isImage && imageTitle.Length > 0) title = imageTitleStripped;
+				else title = a;
+                sb.Append(Tools.AttributeEncode(title));
 				sb.Append(@""" target=""_blank"">");
 				if(n.Length > 0) sb.Append(n);
 				else sb.Append(a);
@@ -878,9 +898,11 @@ namespace ScrewTurn.Wiki
 				sb.Append(@" href=""mailto:");
 				sb.Append(a.Replace("&amp;", "%26")); // Hack to let ampersands work in email addresses
 				sb.Append(@""" title=""");
-				if(!isImage && n.Length > 0) sb.Append(nstripped);
-				else if(isImage && imageTitle.Length > 0) sb.Append(imageTitleStripped);
-				else sb.Append(a);
+                string title;
+				if(!isImage && n.Length > 0) title = nstripped;
+				else if(isImage && imageTitle.Length > 0) title = imageTitleStripped;
+				else title = a;
+                sb.Append(Tools.AttributeEncode(title));
 				sb.Append(@""">");
 				if(n.Length > 0) sb.Append(n);
 				else sb.Append(a);
@@ -973,11 +995,13 @@ namespace ScrewTurn.Wiki
 							if(blank) sb.Append(@" target=""_blank""");
 							sb.Append(@" href=""");
                             a = a.Replace("\"", "&quot;");
-							sb.Append(a);
+							AppendAttr(sb, a);
 							sb.Append(@""" title=""");
-							if(!isImage && n.Length > 0) sb.Append(nstripped);
-							else if(isImage && imageTitle.Length > 0) sb.Append(imageTitleStripped);
-							else sb.Append(/*Content.GetPageContent(info, false).Title*//*tempLink*/a);
+                            string title;
+							if(!isImage && n.Length > 0) title = nstripped;
+							else if(isImage && imageTitle.Length > 0) title = imageTitleStripped;
+							else /*Content.GetPageContent(info, false).Title*//*tempLink*/title = a;
+                            sb.Append(Tools.AttributeEncode(title));
 							sb.Append(@""">");
 							if(n.Length > 0) sb.Append(n);
 							else sb.Append(/*tempLink*/a);
@@ -988,6 +1012,11 @@ namespace ScrewTurn.Wiki
 			}
 			return sb.ToString();
 		}
+
+        private static void AppendAttr(StringBuilder sb, string attr)
+        {
+            sb.Append(Tools.AttributeEncode(attr));
+        }
 
 		/// <summary>
 		/// Detects all the Headers in a block of text (H1, H2, H3, H4).
@@ -1288,7 +1317,12 @@ namespace ScrewTurn.Wiki
 					}
 					else if(item.IndexOf("|") != -1) {
 						sb.Append("<td ");
-						sb.Append(item.Substring(0, item.IndexOf("|")));
+						// At Wikiname A, this code produce html like
+                        /*
+                            <td <a class="pagelink" href="File:PhoenicianA-01.svg>Phoenician aleph" title="File:PhoenicianA-01.svg>Phoenician aleph">File:PhoenicianA-01.svg>Phoenician aleph</a></td>
+                         * I don't now the original intension, but anyway this is catstrofic. I just comment out.
+                         * * */
+                        // sb.Append(item.Substring(0, item.IndexOf("|")));
 						sb.Append(">");
 						sb.Append(item.Substring(item.IndexOf("|") + 1));
 						sb.Append("</td>");
