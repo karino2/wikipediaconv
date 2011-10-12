@@ -721,11 +721,20 @@ namespace WikipediaConv
         private void toEPubButton_Click(object sender, EventArgs e)
         {
             OpenFileDialog fd = CreateIndexPickupDialog();
-            fd.Multiselect = false;
 
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
-                string file = fd.FileName;
+                // picked dump bzip file should place in the same folder.
+                DumpFileToEPubs(fd.FileNames);
+            }
+
+        }
+
+        private void DumpFileToEPubs(string[] files)
+        {
+            DirectoryInfo di = null;
+            foreach (string file in files)
+            {
                 HtmlGenerater gen = new HtmlGenerater(file);
                 if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
@@ -733,7 +742,6 @@ namespace WikipediaConv
                     // tmp fall through. 
                     // return;
                 }
-                // MessageBox.Show("epub gen success!");
 
                 SplitTask split = new SplitTask(gen.WorkingFolder);
                 if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
@@ -741,15 +749,18 @@ namespace WikipediaConv
                     MessageBox.Show("split folder cancelled");
                     return;
                 }
+                di = di ?? gen.WorkingFolder;
+            }
 
-                GenerateEpubTask epub = new GenerateEpubTask(gen.WorkingFolder);
+            if (di != null)
+            {
+                GenerateEpubTask epub = new GenerateEpubTask(di);
                 if (DialogResult.OK != new ProgressDialog(epub).ShowDialog(this))
                 {
                     MessageBox.Show("generate epub cancelled");
                     return;
                 }
             }
-
         }
     }
 }
