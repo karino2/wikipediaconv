@@ -599,9 +599,12 @@ namespace WikipediaConv
             public event ProgressChangedEventHandler ProgressChanged;
 
             SplitFolder _splitter;
-            public SplitTask(DirectoryInfo workDir)
+            public SplitTask(DirectoryInfo workDir, bool isJapanese)
             {
-                _splitter = new SplitFolder(workDir);
+                if(isJapanese)
+                    _splitter = new SplitFolder(workDir, new JapaneseTactics());
+                else
+                    _splitter = new SplitFolder(workDir);
             }
 
             public void Start()
@@ -735,7 +738,8 @@ namespace WikipediaConv
             DirectoryInfo di = null;
             foreach (string file in files)
             {
-                Dumper gen = Dumper.CreateHtmlGenerater(file);
+                bool isJapanese = IsJapanese(file);
+                Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese);
                 if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
                     MessageBox.Show("generate html cancelled");
@@ -743,7 +747,7 @@ namespace WikipediaConv
                     // return;
                 }
 
-                SplitTask split = new SplitTask(gen.WorkingFolder);
+                SplitTask split = new SplitTask(gen.WorkingFolder, isJapanese);
                 if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
                 {
                     MessageBox.Show("split folder cancelled");
@@ -763,6 +767,11 @@ namespace WikipediaConv
             }
         }
 
+        private bool IsJapanese(string file)
+        {
+            return Path.GetFileName(file).StartsWith("ja");
+        }
+
         private void toPdfButton_Click(object sender, EventArgs e)
         {
             OpenFileDialog fd = CreateIndexPickupDialog();
@@ -771,13 +780,16 @@ namespace WikipediaConv
             {
                 foreach (string file in fd.FileNames)
                 {
-                    Dumper gen = Dumper.CreateRawDumper(file);
+                    bool isJapanese = IsJapanese(file);
+                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese);
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                     {
                         MessageBox.Show("generate html cancelled");
                         // tmp fall through. 
                         // return;
                     }
+
+
                 }
             }
         }

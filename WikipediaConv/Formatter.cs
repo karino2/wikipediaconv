@@ -715,7 +715,9 @@ namespace ScrewTurn.Wiki
 				sb.Append("</div>");
 			}
 
-            sb.Insert(0, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/><title>" + HttpUtility.HtmlEncode(documentName) + "</title></head><body" + (Settings.IsRTL ? " dir=\"rtl\" align=\"right\">" : ">"));
+            // sb.Insert(0, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/><title>" + HttpUtility.HtmlEncode(documentName) + "</title></head><body" + (Settings.IsRTL ? " dir=\"rtl\" align=\"right\">" : ">"));
+            sb.Insert(0, "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"ja\" lang=\"ja\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/><title>" + HttpUtility.HtmlEncode(documentName) + "</title></head><body" + (Settings.IsRTL ? " dir=\"rtl\" align=\"right\">" : ">"));
+            
             sb.Append("</body></html>");
 
 			return sb.ToString();

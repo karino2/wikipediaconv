@@ -17,15 +17,16 @@ namespace WikipediaConv
             _action.Decoder = _bzipReader;
             _action._notify = _bzipReader;
         }
-        public static Dumper CreateHtmlGenerater(string bzipPath)
+        public static Dumper CreateHtmlGenerater(string bzipPath, bool isJapanese)
         {
-            return new Dumper(bzipPath, DumpAction.CreateHtmlGeneraterAction(bzipPath));
+            var dumper = new Dumper(bzipPath, DumpAction.CreateHtmlGeneraterAction(bzipPath));
+            dumper._bzipReader.EnableYomi = isJapanese;
+            return dumper;
         }
-        public static Dumper CreateRawDumper(string bzipPath)
+        public static Dumper CreateRawDumper(string bzipPath, bool isJapanese)
         {
             Dumper dumper =  new Dumper(bzipPath, DumpAction.CreateRawDumpAction(bzipPath));
-            //we should guess from index name later.
-            dumper._bzipReader.EnableYomi = true;
+            dumper._bzipReader.EnableYomi = isJapanese;
             return dumper;
         }
         public ILongTask LongTask { get { return _bzipReader; } }

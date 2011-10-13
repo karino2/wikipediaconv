@@ -135,6 +135,10 @@ namespace WikipediaConv
 
         ISplitTactics _tactics;
 
+        public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics)
+            : this(baseDi, baseDi, tactics)
+        { }
+
         public SplitFolder(DirectoryInfo baseDi)
             : this(baseDi, baseDi)
         { }
