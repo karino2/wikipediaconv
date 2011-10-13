@@ -46,6 +46,8 @@ namespace WikipediaConv
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.backButton = new System.Windows.Forms.ToolStripButton();
             this.nextButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.toEPubButton = new System.Windows.Forms.ToolStripButton();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -53,8 +55,7 @@ namespace WikipediaConv
             this.rtlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.toEPubButton = new System.Windows.Forms.ToolStripButton();
+            this.toPdfButton = new System.Windows.Forms.ToolStripButton();
             menuStrip = new System.Windows.Forms.MenuStrip();
             toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
             statusStrip1 = new System.Windows.Forms.StatusStrip();
@@ -174,7 +175,8 @@ namespace WikipediaConv
             this.backButton,
             this.nextButton,
             this.toolStripSeparator3,
-            this.toEPubButton});
+            this.toEPubButton,
+            this.toPdfButton});
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Stretch = true;
             // 
@@ -210,6 +212,18 @@ namespace WikipediaConv
             resources.ApplyResources(this.nextButton, "nextButton");
             this.nextButton.Name = "nextButton";
             this.nextButton.Click += new System.EventHandler(this.nextButton_Click);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            resources.ApplyResources(this.toolStripSeparator3, "toolStripSeparator3");
+            // 
+            // toEPubButton
+            // 
+            this.toEPubButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.toEPubButton, "toEPubButton");
+            this.toEPubButton.Name = "toEPubButton";
+            this.toEPubButton.Click += new System.EventHandler(this.toEPubButton_Click);
             // 
             // closeToolStripMenuItem
             // 
@@ -258,17 +272,12 @@ namespace WikipediaConv
             timer.Enabled = true;
             timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
-            // toolStripSeparator3
+            // toPdfButton
             // 
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            resources.ApplyResources(this.toolStripSeparator3, "toolStripSeparator3");
-            // 
-            // toEPubButton
-            // 
-            this.toEPubButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            resources.ApplyResources(this.toEPubButton, "toEPubButton");
-            this.toEPubButton.Name = "toEPubButton";
-            this.toEPubButton.Click += new System.EventHandler(this.toEPubButton_Click);
+            this.toPdfButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.toPdfButton, "toPdfButton");
+            this.toPdfButton.Name = "toPdfButton";
+            this.toPdfButton.Click += new System.EventHandler(this.toPdfButton_Click);
             // 
             // BrowseForm
             // 
@@ -323,6 +332,7 @@ namespace WikipediaConv
         private System.Windows.Forms.ToolStripButton nextButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripButton toEPubButton;
+        private System.Windows.Forms.ToolStripButton toPdfButton;
 
     }
 }

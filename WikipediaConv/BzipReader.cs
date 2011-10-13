@@ -159,7 +159,10 @@ namespace WikipediaConv
 
             multithreadedIndexing = (Environment.ProcessorCount > 1);
             abortDecoding = false;
+            EnableYomi = false;
         }
+
+        public bool EnableYomi { get; set; }
 
         #region Decoding methods
         /// <summary>
@@ -351,6 +354,7 @@ namespace WikipediaConv
                     break;
                 }
 
+
                 // Start creating the object for the tokenizing ThreadPool thread
 
                 long[] begins = new long[1];
@@ -385,6 +389,8 @@ namespace WikipediaConv
                 ends[0] = end;
 
                 PageInfo pi = new PageInfo(id, title, begins, ends);
+                if (EnableYomi)
+                    pi.Yomi = GetDefaultSort(currentText, idEnd, topicEnd);
 
                 Interlocked.Increment(ref activeThreads);
 
@@ -452,6 +458,27 @@ namespace WikipediaConv
             previousBlockEnd = end;
 
             return charsToSave;
+        }
+
+        static internal string GetDefaultSort(string currentText, int idEnd, int topicEnd)
+        {
+            string begStr = "{{DEFAULTSORT:";
+            int pos = currentText.IndexOf(begStr, idEnd);
+            if (pos == -1 || pos > topicEnd)
+            {
+                begStr = "{{デフォルトソート:";
+                pos = currentText.IndexOf(begStr, idEnd);
+            }
+
+            if (pos == -1 || pos > topicEnd)
+                return "わわわ";
+            int endPos = currentText.IndexOf("}}", pos);
+            if(pos +begStr.Length == endPos)
+                return "わわわ";
+            string ret = currentText.Substring(pos+begStr.Length, endPos - (pos+begStr.Length));
+            if (String.IsNullOrEmpty(ret))
+                Debugger.Break();
+            return ret;
         }
 
         #region HandleDecodedData Related

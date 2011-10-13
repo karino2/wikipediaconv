@@ -74,7 +74,38 @@ namespace WikipediaConvTest
 
         private static void VerifyWikinameToFileBaseName(string expect, string input)
         {
-            string actual = HtmlGeneraterAction.WikiNameToFileBaseName(input);
+            string actual = DumpAction.WikiNameToFileBaseName(input);
+            Assert.AreEqual(expect, actual);
+        }
+
+        // BzipReader test. place here for a while
+        [Test]
+        public void TestGetDefaultSort_nothing()
+        {
+            string expect = "わわわ";
+            string actual = BzipReader.GetDefaultSort("abcde", 1, 5);
+            Assert.AreEqual(expect, actual);
+        }
+
+        [Test]
+        public void TestGetDefaultSort_roman()
+        {
+            string expect = "def";
+            string actual = BzipReader.GetDefaultSort("abc{{DEFAULTSORT:def}}ghi", 1, 25);
+            Assert.AreEqual(expect, actual);
+        }
+        [Test]
+        public void TestGetDefaultSort_katakana()
+        {
+            string expect = "def";
+            string actual = BzipReader.GetDefaultSort("abc{{デフォルトソート:def}}ghi", 1, 25);
+            Assert.AreEqual(expect, actual);
+        }
+        [Test]
+        public void TestGetDefaultSort_afterEnd()
+        {
+            string expect = "わわわ";
+            string actual = BzipReader.GetDefaultSort("abc{{デフォルトソート:def}}ghi", 0, 2);
             Assert.AreEqual(expect, actual);
         }
     }

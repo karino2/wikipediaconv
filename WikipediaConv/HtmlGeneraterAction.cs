@@ -7,14 +7,31 @@ using System.Diagnostics;
 
 namespace WikipediaConv
 {
-    public class HtmlGeneraterAction : IDecodedAction
+    public class DumpAction : IDecodedAction
     {
         DirectoryInfo _base;
         internal INotifyDecoder _notify;
-        public HtmlGeneraterAction(string bzipPath)
+        Func<PageInfo, string> _getContent;
+        public DumpAction(string bzipPath, string extension, string relativePath, Func<PageInfo, string> getContent)
         {
             _base = new FileInfo(bzipPath).Directory;
+            Extension = extension;
+            _getContent = getContent;
+            RelativePath = relativePath;
         }
+
+        public static DumpAction CreateHtmlGeneraterAction(string bzipPath)
+        {
+            return new DumpAction(bzipPath, ".html", "ePub/", (pi) => pi.GetFormattedContent());
+        }
+
+        public static DumpAction CreateRawDumpAction(string bzipPath)
+        {
+            return new DumpAction(bzipPath, ".wiki", "pdf/", (pi) => pi.GetRawContent());
+        }
+
+        public string Extension { get; set; }
+        public string RelativePath { get; set; }
         public void PreAction()
         {
         }
@@ -28,7 +45,7 @@ namespace WikipediaConv
         {
             get
             {
-                DirectoryInfo di = new DirectoryInfo(Path.Combine(_base.FullName, "ePub/"));
+                DirectoryInfo di = new DirectoryInfo(Path.Combine(_base.FullName, RelativePath));
                 if (!di.Exists)
                 {
                     di.Create();
@@ -53,13 +70,17 @@ namespace WikipediaConv
             try
             {
                 pi.TreatRedirectException = true;
-                string formattedContent = pi.GetFormattedContent();
+                string formattedContent = _getContent(pi);
                 DirectoryInfo di = TargetPath(pi);
                 string path = GetHtmlName(pi, di);
                 _path = path; // for debug.
-                using (StreamWriter sw = new StreamWriter(path))
+                // ignore redirect.
+                if (!IsRedirect(formattedContent))
                 {
-                    sw.Write(formattedContent);
+                    using (StreamWriter sw = new StreamWriter(path))
+                    {
+                        sw.Write(formattedContent);
+                    }
                 }
             }
             catch (PageInfo.RedirectException re)
@@ -76,11 +97,22 @@ namespace WikipediaConv
             _notify.NotifyEnd();
         }
 
-        private static string GetHtmlName(PageInfo pi, DirectoryInfo di)
+        private bool IsRedirect(string formattedContent)
+        {
+            return formattedContent.StartsWith("#REDIRECT ") ||
+                formattedContent.StartsWith("#転送 ");
+        }
+
+
+        private string GetHtmlName(PageInfo pi, DirectoryInfo di)
         {
             string wikiName = pi.Name;
             string baseName = WikiNameToFileBaseName(wikiName);
-            string fname = baseName + ".html";
+            string fname = "_" + baseName + Extension;
+            if (!String.IsNullOrEmpty(pi.Yomi))
+                fname = pi.Yomi.Replace("*", "") + fname;
+            else
+                Debugger.Break();
             string path = Path.Combine(di.FullName, fname);
             return path;
         }

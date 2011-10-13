@@ -735,7 +735,7 @@ namespace WikipediaConv
             DirectoryInfo di = null;
             foreach (string file in files)
             {
-                HtmlGenerater gen = new HtmlGenerater(file);
+                Dumper gen = Dumper.CreateHtmlGenerater(file);
                 if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
                     MessageBox.Show("generate html cancelled");
@@ -759,6 +759,25 @@ namespace WikipediaConv
                 {
                     MessageBox.Show("generate epub cancelled");
                     return;
+                }
+            }
+        }
+
+        private void toPdfButton_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fd = CreateIndexPickupDialog();
+
+            if (fd.ShowDialog(this) == DialogResult.OK)
+            {
+                foreach (string file in fd.FileNames)
+                {
+                    Dumper gen = Dumper.CreateRawDumper(file);
+                    if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
+                    {
+                        MessageBox.Show("generate html cancelled");
+                        // tmp fall through. 
+                        // return;
+                    }
                 }
             }
         }

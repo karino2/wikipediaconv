@@ -130,14 +130,28 @@ namespace WikipediaConv
                 return formattedContent;
             }
 
-            string raw = Decoder.LoadAndDecodeBlock(Beginnings, Ends);
+            string raw = GetRawContent();
 
             formattedContent = FormatContent(raw); 
 
             return formattedContent;
         }
 
-        public string FormatContent(string raw)
+        public string GetRawContent()
+        {
+            string raw =  Decoder.LoadAndDecodeBlock(Beginnings, Ends);
+            return GetTextNodeInnerText(raw);
+        }
+
+        public string FormatContent(string toFormat)
+        {
+            string tmp = Formatter.Format(Name, HttpUtility.HtmlDecode(toFormat), this, Settings.IsRTL, out redirectToTopic);
+            if (redirectToTopic != null && TreatRedirectException)
+                throw new RedirectException("redirected, name=" + Name + " as " + redirectToTopic);
+            return tmp;
+        }
+
+        private string GetTextNodeInnerText(string raw)
         {
             string searchfor = String.Format("<id>{0}</id>", TopicId);
 
@@ -171,15 +185,14 @@ namespace WikipediaConv
 
             string toFormat = raw.Substring(extractionStart + 1, extractionEnd - extractionStart - 1);
 
-            string tmp = Formatter.Format(Name, HttpUtility.HtmlDecode(toFormat), this, Settings.IsRTL, out redirectToTopic);
-            if (redirectToTopic != null && TreatRedirectException)
-                throw new RedirectException("redirected, name=" + Name + " as " + redirectToTopic);
-            return tmp;
+            return toFormat;
         }
 
         public override string ToString()
         {
             return Name;
         }
+
+        public string Yomi { get; set; }
     }
 }

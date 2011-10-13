@@ -697,7 +697,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         [Test]
         public void TestFileNameToSortKey_Number()
         {
-            string expected = @"worldseries";
+            string expected = @"1903worldseries";
             string input = @"I:hoge\\1903 World Series.html";
             VerifyFileNameToSortKey(input, expected);
         }
@@ -735,8 +735,15 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             VerifyFileNameToSortKey(input, expected);
         }
 
+        [Test]
+        public void TestFileNameToSortKey_Japanese()
+        {
+            string input = @"I:hoge\\にほん_日本.html";
+            string expected = @"にほん";
+            VerifyFileNameToSortKeyJP(input, expected);
+        }
         
-        // [Test]
+        [Test]
         public void RunSplitFolder()
         {
             /*
@@ -748,12 +755,32 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             SplitFolder spliter = new SplitFolder(new DirectoryInfo(@"../../../../ePub2"));
             spliter.Split();
              * */
+            var di = new DirectoryInfo(@"../../../../pdf");
+            SplitFolder spliter = new SplitFolder(di, di, new JapaneseTactics());
+            spliter.Extension = ".wiki";
+            spliter.Split();
+        }
+
+        private static void VerifyFileNameToSortKeyJP(string input, string expected)
+        {
+            VerifyFileNameToSortKeyGeneric(input, expected, true);
+        }
+
+        private static void VerifyFileNameToSortKeyGeneric(string input, string expected, bool japanese)
+        {
+            var di = new DirectoryInfo("./");
+            SplitFolder folder;
+            if (japanese)
+                folder = new SplitFolder(di, di, new JapaneseTactics());
+            else
+                folder = new SplitFolder(di);
+            string actual = folder.FileNameToSortKey(new FileInfo(input));
+            Assert.AreEqual(expected, actual);
         }
 
         private static void VerifyFileNameToSortKey(string input, string expected)
         {
-            string actual = SplitFolder.FileNameToSortKey(new FileInfo(input));
-            Assert.AreEqual(expected, actual);
+            VerifyFileNameToSortKeyGeneric(input, expected, false);
         }
     }
 }
