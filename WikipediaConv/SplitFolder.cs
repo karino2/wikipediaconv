@@ -107,6 +107,8 @@ namespace WikipediaConv
                 return "ま";
             if (Inside('や', 'よ', c))
                 return "や";
+            if (Inside('ら', 'ろ', c))
+                return "ら";
             return "わ";
         }
 
@@ -294,7 +296,6 @@ namespace WikipediaConv
             string key = FileNameToSortKey(file);
             if (key.Length == untilCur.Length)
                 return Current.FullName;
-            Debug.Assert(key.StartsWith(untilCur));
             string nextHead = _tactics.Lookup(key.Substring(untilCur.Length, 1));
             return Path.Combine(Current.FullName, nextHead);
         }

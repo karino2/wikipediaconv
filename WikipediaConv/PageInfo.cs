@@ -145,7 +145,7 @@ namespace WikipediaConv
 
         public string FormatContent(string toFormat)
         {
-            string tmp = Formatter.Format(Name, HttpUtility.HtmlDecode(toFormat), this, Settings.IsRTL, out redirectToTopic);
+            string tmp = Formatter.Format(Name, toFormat, this, Settings.IsRTL, out redirectToTopic);
             if (redirectToTopic != null && TreatRedirectException)
                 throw new RedirectException("redirected, name=" + Name + " as " + redirectToTopic);
             return tmp;
@@ -185,7 +185,7 @@ namespace WikipediaConv
 
             string toFormat = raw.Substring(extractionStart + 1, extractionEnd - extractionStart - 1);
 
-            return toFormat;
+            return HttpUtility.HtmlDecode(toFormat);
         }
 
         public override string ToString()

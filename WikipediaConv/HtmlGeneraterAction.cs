@@ -89,7 +89,7 @@ namespace WikipediaConv
             }
             catch (Exception ex)
             {
-                Debugger.Break();
+                // Debugger.Break();
                 Debug.WriteLine("path:" + _path);
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace.ToString());
@@ -111,8 +111,10 @@ namespace WikipediaConv
             string fname = "_" + baseName + Extension;
             if (!String.IsNullOrEmpty(pi.Yomi))
                 fname = pi.Yomi.Replace("*", "") + fname;
+                /*
             else
                 Debugger.Break();
+                 * */
             string path = Path.Combine(di.FullName, fname);
             return path;
         }

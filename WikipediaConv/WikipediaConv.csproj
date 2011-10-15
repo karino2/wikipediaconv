@@ -39,6 +39,9 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="iTextAsian">
+      <HintPath>..\dlls\iTextAsian.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
@@ -62,6 +65,7 @@
     </Compile>
     <Compile Include="bzip2.cs" />
     <Compile Include="BzipReader.cs" />
+    <Compile Include="PdfArchiver.cs" />
     <Compile Include="EPubArchiver.cs" />
     <Compile Include="HtmlGenerater.cs" />
     <Compile Include="HtmlGeneraterAction.cs" />

@@ -607,6 +607,8 @@ namespace WikipediaConv
                     _splitter = new SplitFolder(workDir);
             }
 
+            public string Extension { set { _splitter.Extension = value; } }
+
             public void Start()
             {
                 _abort = false;
@@ -662,16 +664,23 @@ namespace WikipediaConv
             int _epubChapterNum = 10;
             EPubArchiver _archiver;
 
-            public GenerateEpubTask(DirectoryInfo workDir)
+            Action<IEnumerable<FileInfo>, string> Archive;
+            public string Extension { get; set; }
+
+            public GenerateEpubTask(DirectoryInfo workDir, Action<IEnumerable<FileInfo>, string> archive, string extension)
             {
-                _archiver = new EPubArchiver();
-                var node =  SplitFolder.DirectoryForest(workDir);
+                Archive = archive;
+                var node = SplitFolder.DirectoryForest(workDir);
                 _walker = node.Walker;
+                Extension = extension;
+                SourceExtension = ".html";
             }
+
+            public string SourceExtension { get; set; }
 
             public void Start()
             {
-                ReportProgress(0, DecodingProgress.State.Running, "start epub archive");
+                ReportProgress(0, DecodingProgress.State.Running, "start archive");
                 int count = 0;
                 _abort = false;
                 foreach (var node in _walker)
@@ -681,23 +690,32 @@ namespace WikipediaConv
                     if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
                         continue;
                     var di = node.Element;
-                    FileInfo[] fis = di.GetFiles("*.html");
+                    FileInfo[] fis = di.GetFiles("*"+ SourceExtension);
                     List<FileInfo> flist = new List<FileInfo>();
                     for(int start = 0; start < fis.Length; start+=_epubChapterNum)
                     {
                         flist.Clear();
                         CopyRange(flist, fis, start, _epubChapterNum);
-                        string epubName = Path.GetFileNameWithoutExtension(flist[0].Name) + "-" +
-                            Path.GetFileNameWithoutExtension(flist[flist.Count-1].Name) + ".epub";
+                        string epubName = RemoveYomi(Path.GetFileNameWithoutExtension(flist[0].Name)) + "-" +
+                            RemoveYomi(Path.GetFileNameWithoutExtension(flist[flist.Count-1].Name)) + Extension;
 
 
-                        _archiver.Archive(flist, Path.Combine(fis[0].Directory.FullName, epubName));
+                        Archive(flist, Path.Combine(fis[0].Directory.FullName, epubName));
                         flist.ForEach(fi => fi.Delete());
-                        ReportProgress(0, DecodingProgress.State.Running, "epub: " + count++);
+                        ReportProgress(0, DecodingProgress.State.Running, "archive: " + count++);
+                        Thread.Sleep(5);
                     }
 
                 }
-                ReportProgress(0, DecodingProgress.State.Finished, "finish epub archive");
+                ReportProgress(0, DecodingProgress.State.Finished, "finish archive");
+            }
+
+            private string RemoveYomi(string fname)
+            {
+                var ar = fname.Split('_');
+                List<string> lstr = new List<string>(ar);
+                lstr.RemoveAt(0);
+                return String.Join("_", lstr);
             }
 
             private void CopyRange(List<FileInfo> flist, FileInfo[] fis, int start, int num)
@@ -728,12 +746,14 @@ namespace WikipediaConv
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
                 // picked dump bzip file should place in the same folder.
-                DumpFileToEPubs(fd.FileNames);
+
+                var archiver = new EPubArchiver();
+                DumpFileToArchive(fd.FileNames, archiver.Archive, ".epub");
             }
 
         }
 
-        private void DumpFileToEPubs(string[] files)
+        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, string extension)
         {
             DirectoryInfo di = null;
             foreach (string file in files)
@@ -758,7 +778,7 @@ namespace WikipediaConv
 
             if (di != null)
             {
-                GenerateEpubTask epub = new GenerateEpubTask(di);
+                GenerateEpubTask epub = new GenerateEpubTask(di, archive, extension);
                 if (DialogResult.OK != new ProgressDialog(epub).ShowDialog(this))
                 {
                     MessageBox.Show("generate epub cancelled");
@@ -778,6 +798,41 @@ namespace WikipediaConv
 
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
+                DirectoryInfo di = null;
+                foreach (string file in fd.FileNames)
+                {
+                    bool isJapanese = IsJapanese(file);
+
+                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese);
+                    if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
+                    {
+                        MessageBox.Show("generate html cancelled");
+                        // tmp fall through. 
+                        // return;
+                    }
+
+                    SplitTask split = new SplitTask(gen.WorkingFolder, isJapanese);
+                    split.Extension = ".wiki";
+                    if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
+                    {
+                        MessageBox.Show("split folder cancelled");
+                        return;
+                    }
+                    di = di ?? gen.WorkingFolder;
+                }
+
+                if (di != null)
+                {
+                    var archiver = new PdfArchiver();
+                    GenerateEpubTask epub = new GenerateEpubTask(di, archiver.Archive, ".pdf");
+                    epub.SourceExtension = ".wiki";
+                    if (DialogResult.OK != new ProgressDialog(epub).ShowDialog(this))
+                    {
+                        MessageBox.Show("generate epub cancelled");
+                        return;
+                    }
+                }
+                /*
                 foreach (string file in fd.FileNames)
                 {
                     bool isJapanese = IsJapanese(file);
@@ -791,6 +846,7 @@ namespace WikipediaConv
 
 
                 }
+                 * */
             }
         }
     }
