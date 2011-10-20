@@ -224,12 +224,18 @@ namespace WikipediaConv
             if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
                 return; // continue;
             Current = node.Element;
-            if (TooMuchFile)
+            bool needToWalkDown = false;
+            if (TooMuchFile || AlreadySplited)
             {
                 CreateSubdirectories();
-                SortToSubdirectories();
+                needToWalkDown = SortToSubdirectories();
                 RemoveUnusedDirectories();
             }
+            if (!needToWalkDown)
+            {
+                _walker.SkipChildren();
+            }
+
         }
 
         public void Split()
@@ -280,14 +286,19 @@ namespace WikipediaConv
             target.MoveTo(destPath);
         }
 
-        private void SortToSubdirectories()
+        private bool SortToSubdirectories()
         {
+            bool moveSomething = false;
             foreach (var file in FileEnum)
             {
                 string dest = GetMatchedSubdirectoryPath(file);
-                if(dest != Current.FullName)
+                if (dest != Current.FullName)
+                {
+                    moveSomething = true;
                     MoveTo(file, Path.Combine(dest, file.Name));
+                }
             }
+            return moveSomething;
         }
 
         internal string FileNameHeadUntilCurrent
@@ -376,6 +387,19 @@ namespace WikipediaConv
                 return BiggerThanLimit(Current.EnumerateFiles("*" + Extension), MaxFileNum);
                 // return Current.GetFiles("*" + Extension).Length > MaxFileNum;
             }
+        }
+
+        public bool AlreadySplited { 
+            get 
+            {
+
+                var dirs = Current.EnumerateDirectories();
+                foreach(var dir in dirs)
+                {
+                    return true; // at least one dir exist.
+                }
+                return false;
+            } 
         }
     }
 }

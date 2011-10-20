@@ -429,10 +429,8 @@ namespace WikipediaConv
         /// Tokenizes and adds the specified PageInfo object to Lucene index
         /// </summary>
         /// <param name="state">PageInfo object</param>
-        public void Action(object state)
+        public bool Action(PageInfo pi)
         {
-            PageInfo pi = (PageInfo)state;
-
             Document d = new Document();
 
             // Store title
@@ -457,7 +455,7 @@ namespace WikipediaConv
             d.Add(new Field("topicid", pi.TopicId.ToString(), Field.Store.YES, Field.Index.UN_TOKENIZED));
 
             memoryIndexer.AddDocument(d);
-
+            return true;
         }
 
 

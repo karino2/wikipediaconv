@@ -57,9 +57,8 @@ namespace WikipediaConv
         public ILoadAndDecodeBlocker Decoder { get; set; }
         string _path;
 
-        public void Action(object state)
+        public bool Action(PageInfo pi)
         {
-            PageInfo pi = (PageInfo)state;
             pi.Decoder = Decoder;
             if (pi.Beginnings.Length > 1)
             {
@@ -81,6 +80,7 @@ namespace WikipediaConv
                     {
                         sw.Write(formattedContent);
                     }
+                    return true;
                 }
             }
             catch (PageInfo.RedirectException re)
@@ -94,6 +94,7 @@ namespace WikipediaConv
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace.ToString());
             }
+            return false;
         }
 
         static internal bool IsSkipCandidate(string wikiName, string formattedContent)

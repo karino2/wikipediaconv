@@ -31,7 +31,7 @@ namespace WikipediaConv
 
         void Close();
 
-        void Action(object state);
+        bool Action(PageInfo page);
 
         void FlashAction();
     }
@@ -602,10 +602,12 @@ namespace WikipediaConv
         /// <param name="state">PageInfo object</param>
         private void HandleOnePage(object state)
         {
-            _action.Action(state);
+            PageInfo pi = (PageInfo)state;
+            bool handled = _action.Action(pi);
             Interlocked.Decrement(ref activeThreads);
 
-            _currentHandledFileNum++;
+            if(handled)
+                _currentHandledFileNum++;
         }
 
         private void FlashAction()
