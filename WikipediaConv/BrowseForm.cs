@@ -690,17 +690,17 @@ namespace WikipediaConv
                     if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
                         continue;
                     var di = node.Element;
-                    FileInfo[] fis = di.GetFiles("*"+ SourceExtension);
+                    var fisEnum = di.EnumerateFiles("*"+ SourceExtension).GetEnumerator();
                     List<FileInfo> flist = new List<FileInfo>();
-                    for(int start = 0; start < fis.Length; start+=_epubChapterNum)
+                    while(fisEnum.MoveNext())
                     {
+                        var dirname = fisEnum.Current.Directory.FullName;
                         flist.Clear();
-                        CopyRange(flist, fis, start, _epubChapterNum);
+                        CopyRange(flist, fisEnum, _epubChapterNum);
                         string epubName = RemoveYomi(Path.GetFileNameWithoutExtension(flist[0].Name)) + "-" +
                             RemoveYomi(Path.GetFileNameWithoutExtension(flist[flist.Count-1].Name)) + Extension;
 
-
-                        Archive(flist, Path.Combine(fis[0].Directory.FullName, epubName));
+                        Archive(flist, Path.Combine(dirname, epubName));
                         flist.ForEach(fi => fi.Delete());
                         ReportProgress(0, DecodingProgress.State.Running, "archive: " + count++);
                         Thread.Sleep(5);
@@ -718,13 +718,16 @@ namespace WikipediaConv
                 return String.Join("_", lstr);
             }
 
-            private void CopyRange(List<FileInfo> flist, FileInfo[] fis, int start, int num)
+            private void CopyRange(List<FileInfo> flist, IEnumerator<FileInfo> fisEnum, int num)
             {
-                int range = Math.Min(start + num, fis.Length);
-                for (int i = start; i < range; i++)
+                int count = 0;
+                do
                 {
-                    flist.Add(fis[i]);
-                }
+                    flist.Add(fisEnum.Current);
+                    count++;
+                    if (num <= count)
+                        return;
+                } while (fisEnum.MoveNext());
             }
 
             public void Abort()
