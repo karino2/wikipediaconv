@@ -285,6 +285,8 @@ namespace WikipediaConv
                 WaitTillFinish();
 
                 PostAction();
+
+                Split();
             }
                 /*
             catch (Exception ex)
@@ -481,13 +483,23 @@ namespace WikipediaConv
             return charsToSave;
         }
 
+        private void Split()
+        {
+            int count = 0;
+            SplitFolder.StartSplit();
+            while (SplitFolder.IsRunning)
+            {
+                SplitFolder.SplitOne();
+                ReportProgress(0, DecodingProgress.State.Running, "split: " + count++);
+            }
+        }
+
         private void SplitIfNecessary()
         {
             if (StartSplitLimit != -1 && _currentHandledFileNum > StartSplitLimit)
             {
                 Suspend();
-                // split, can't abort now...
-                SplitFolder.Split();
+                Split();
                 _currentHandledFileNum = 0;
 
                 Resume();
