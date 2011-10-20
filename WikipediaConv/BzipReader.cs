@@ -550,27 +550,6 @@ namespace WikipediaConv
             return startValidYomiRegex.IsMatch(str);
         }
 
-        // TODO: remove.
-        static internal string GetDefaultSort(string currentText, int idEnd, int topicEnd)
-        {
-            string begStr = "{{DEFAULTSORT:";
-            int pos = currentText.IndexOf(begStr, idEnd);
-            if (pos == -1 || pos > topicEnd)
-            {
-                begStr = "{{デフォルトソート:";
-                pos = currentText.IndexOf(begStr, idEnd);
-            }
-
-            if (pos == -1 || pos > topicEnd)
-                return "わわわ";
-            int endPos = currentText.IndexOf("}}", pos);
-            if(pos +begStr.Length == endPos)
-                return "わわわ";
-            string ret = currentText.Substring(pos+begStr.Length, endPos - (pos+begStr.Length));
-            if (String.IsNullOrEmpty(ret))
-                Debugger.Break();
-            return ret;
-        }
 
         #region HandleDecodedData Related
         private void FinalizeAction(bool failed)
