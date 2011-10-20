@@ -162,7 +162,7 @@ namespace WikipediaConvTest
         public void TestGetYomi_nothing()
         {
             string expect = "わ";
-            string actual = BzipReader.GetYomi("!dummy", "abcde", 1, 5);
+            string actual = BzipReader.GetYomi("!dummy", "abcde");
             Assert.AreEqual(expect, actual);
         }
 
@@ -170,7 +170,7 @@ namespace WikipediaConvTest
         public void TestGetYomi_WikiName()
         {
             string expect = "はじ";
-            string actual = BzipReader.GetYomi("はじ目", "abcde", 1, 5);
+            string actual = BzipReader.GetYomi("はじ目", "abcde");
             Assert.AreEqual(expect, actual);
         }
 
@@ -220,14 +220,6 @@ namespace WikipediaConvTest
 
 
         [Test]
-        public void TestGetYomi_DefaultSort_afterEnd()
-        {
-            string expect = "わ";
-            string actual = BzipReader.GetYomi("!dummy", "abc{{デフォルトソート:def}}ghi", 0, 2);
-            Assert.AreEqual(expect, actual);
-        }
-
-        [Test]
         public void TestGetYomi_DefaultSort_Aster()
         {
             string expect = "わ";
@@ -238,7 +230,7 @@ namespace WikipediaConvTest
         // call with default start end.
         static string CallGetYomi(string wikiName, string input)
         {
-            return BzipReader.GetYomi(wikiName, input, 0, input.Length);
+            return BzipReader.GetYomi(wikiName, input);
         }
 
         [Test]
@@ -248,8 +240,7 @@ namespace WikipediaConvTest
 '''平仮名''' （ひらがな）
 abc{{DEFAULTSORT:def}}ghi";
             string expect = "ひらがな";
-            string actual = BzipReader.GetYomi("!dummy",
-                input, 0, input.Length);
+            string actual = BzipReader.GetYomi("!dummy", input);
             Assert.AreEqual(expect, actual);
         }
 
@@ -273,6 +264,14 @@ abc{{DEFAULTSORT:ていいひいえすけいとらまはなよめはやくとし
             string actual = CallGetYomi("!dummy", input);
             Assert.IsTrue(actual.StartsWith(expect));
             Assert.LessOrEqual(actual.Length, 50); // tekito-
+        }
+        [Test]
+        public void TestGetYomi_Wikiname_colon()
+        {
+            string input = @"dummy content";
+            string expect = "WikipediaFAQ";
+            string actual = BzipReader.GetYomi("Wikipedia:FAQ", input);
+            Assert.AreEqual(expect, actual);
         }
     }
 }

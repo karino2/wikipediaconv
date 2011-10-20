@@ -60,11 +60,6 @@ namespace WikipediaConv
         public bool Action(PageInfo pi)
         {
             pi.Decoder = Decoder;
-            if (pi.Beginnings.Length > 1)
-            {
-                Array.Sort(pi.Beginnings);
-                Array.Sort(pi.Ends);
-            }
 
             try
             {
@@ -89,7 +84,6 @@ namespace WikipediaConv
             }
             catch (Exception ex)
             {
-                // Debugger.Break();
                 Debug.WriteLine("path:" + _path);
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace.ToString());

@@ -30,7 +30,19 @@ namespace WikipediaConv
         /// </summary>
         public readonly Indexer Indexer;
 
-        public ILoadAndDecodeBlocker Decoder { get; set; }
+        ILoadAndDecodeBlocker _decoder;
+        public ILoadAndDecodeBlocker Decoder { get { return _decoder; }
+            set
+            {
+                if (Beginnings.Length > 1)
+                {
+                    Array.Sort(Beginnings);
+                    Array.Sort(Ends);
+                }
+
+                _decoder = value;
+            }
+        }
         /// <summary>
         /// The title of the topic
         /// </summary>
@@ -88,7 +100,9 @@ namespace WikipediaConv
         {
             TreatRedirectException = false;
             Indexer = ixr;
-            Decoder = ixr;
+
+            // Decoder setter sort Beginnings and Ends.
+            _decoder = ixr;
 
             Score = hit.GetScore();
 
@@ -137,10 +151,15 @@ namespace WikipediaConv
             return formattedContent;
         }
 
+        string rawContent = null;
+
         public string GetRawContent()
         {
+            if (!String.IsNullOrEmpty(rawContent))
+                return rawContent;
             string raw =  Decoder.LoadAndDecodeBlock(Beginnings, Ends);
-            return GetTextNodeInnerText(raw);
+            rawContent =  GetTextNodeInnerText(raw);
+            return rawContent;
         }
 
         public string FormatContent(string toFormat)

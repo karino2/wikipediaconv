@@ -397,7 +397,10 @@ namespace WikipediaConv
 
                 PageInfo pi = new PageInfo(id, title, begins, ends);
                 if (EnableYomi)
-                    pi.Yomi = GetYomi(pi.Name, currentText, idEnd, topicEnd);
+                {
+                    pi.Decoder = this;
+                    pi.Yomi = GetYomi(pi.Name, pi.GetRawContent());
+                }
 
                 Interlocked.Increment(ref activeThreads);
 
@@ -491,20 +494,20 @@ namespace WikipediaConv
             }
         }
 
-        static internal string GetYomi(string wikiName, string currentText, int idEnd, int topicEnd)
+        static internal string GetYomi(string wikiName, string rawContent)
         {
-            var full = GetFullYomi(wikiName, currentText, idEnd, topicEnd);
+            var full = GetFullYomi(wikiName, rawContent);
             if (full.Length > 40)
                 return full.Substring(0, 40);
             return full;
         }
-        static internal string GetFullYomi(string wikiName, string currentText, int idEnd, int topicEnd)
+        static internal string GetFullYomi(string wikiName, string rawContent)
         {
             // TODO: we should extract to class later
             bool yomiFound = false;
             string yomi = null;
             string defaultSort = null;
-            var lines = currentText.Substring(idEnd, topicEnd - idEnd).Split('\n');
+            var lines = rawContent.Split('\n');
             foreach (var line in lines)
             {
                 if (!yomiFound)
@@ -556,7 +559,12 @@ namespace WikipediaConv
                 return yomi;
             if (!String.IsNullOrEmpty(defaultSort) && StartWithValidYomi(defaultSort))
                 return defaultSort;
-            var match = yomiHeadRegex.Match(wikiName);
+            return WikiNameToYomi(wikiName);
+        }
+
+        private static string WikiNameToYomi(string wikiName)
+        {
+            var match = yomiHeadRegex.Match(wikiName.Replace(":", ""));
             if (match.Success)
             {
                 return match.Value;
