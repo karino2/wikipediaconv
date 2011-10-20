@@ -19,6 +19,7 @@ using Lucene.Net.Search;
 using RAMDirectory = Lucene.Net.Store.RAMDirectory;
 using FSDirectory = Lucene.Net.Store.FSDirectory;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace WikipediaConv
 {
@@ -390,7 +391,7 @@ namespace WikipediaConv
 
                 PageInfo pi = new PageInfo(id, title, begins, ends);
                 if (EnableYomi)
-                    pi.Yomi = GetDefaultSort(currentText, idEnd, topicEnd);
+                    pi.Yomi = GetYomi(pi.Name, currentText, idEnd, topicEnd);
 
                 Interlocked.Increment(ref activeThreads);
 
@@ -460,6 +461,96 @@ namespace WikipediaConv
             return charsToSave;
         }
 
+        static internal string GetYomi(string wikiName, string currentText, int idEnd, int topicEnd)
+        {
+            var full = GetFullYomi(wikiName, currentText, idEnd, topicEnd);
+            if (full.Length > 40)
+                return full.Substring(0, 40);
+            return full;
+        }
+        static internal string GetFullYomi(string wikiName, string currentText, int idEnd, int topicEnd)
+        {
+            // TODO: we should extract to class later
+            bool yomiFound = false;
+            string yomi = null;
+            string defaultSort = null;
+            var lines = currentText.Substring(idEnd, topicEnd - idEnd).Split('\n');
+            foreach (var line in lines)
+            {
+                if (!yomiFound)
+                {
+                    if (line.StartsWith("'''"))
+                    {
+                        int titleEnd = line.IndexOf("'''", 3);
+                        if (titleEnd != -1)
+                        {
+                            int yomiStart = line.IndexOf("（", titleEnd);
+                            if (yomiStart == -1)
+                                yomiStart = line.IndexOf("(", titleEnd);
+                            if (yomiStart != -1)
+                            {
+                                int yomiEnd = line.IndexOf("）", yomiStart);
+                                if(yomiEnd == -1)
+                                    yomiEnd = line.IndexOf(")", yomiStart);
+                                if (yomiEnd != -1)
+                                {
+                                    yomi = line.Substring(yomiStart + 1, yomiEnd - (yomiStart + 1));
+                                    yomi = Sanitize(yomi);
+                                    if(StartWithValidYomi(yomi))
+                                        yomiFound = true;
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                string begStr = "{{DEFAULTSORT:";
+                int pos = line.IndexOf(begStr);
+                if (pos == -1)
+                {
+                    begStr = "{{デフォルトソート:";
+                    pos = line.IndexOf(begStr);
+                }
+
+                if (pos == -1)
+                    continue;
+                int endPos = line.IndexOf("}}", pos);
+                if (pos + begStr.Length == endPos)
+                    continue;
+                defaultSort = line.Substring(pos + begStr.Length, endPos - (pos + begStr.Length));
+                defaultSort = Sanitize(defaultSort);
+            }
+
+            if (yomiFound)
+                return yomi;
+            if (!String.IsNullOrEmpty(defaultSort) && StartWithValidYomi(defaultSort))
+                return defaultSort;
+            var match = yomiHeadRegex.Match(wikiName);
+            if (match.Success)
+            {
+                return match.Value;
+            }
+
+            // no yomi.
+            return "わ";
+        }
+
+        private static string Sanitize(string defaultSort)
+        {
+            defaultSort = defaultSort.Replace("*", "").Replace(":", "").Replace("/", "").Replace("\\", "");
+            return defaultSort;
+        }
+
+        // TODO: dup regexp
+        private static Regex yomiHeadRegex = new Regex("^[a-zA-Z0-9ぁ-んァ-ンヵヶヴ]+", RegexOptions.Compiled | RegexOptions.Singleline);
+        private static Regex startValidYomiRegex = new Regex("^[a-zA-Z0-9ぁ-んァ-ンヵヶヴ]", RegexOptions.Compiled | RegexOptions.Singleline);
+        static internal bool StartWithValidYomi(string str)
+        {
+            return startValidYomiRegex.IsMatch(str);
+        }
+
+        // TODO: remove.
         static internal string GetDefaultSort(string currentText, int idEnd, int topicEnd)
         {
             string begStr = "{{DEFAULTSORT:";

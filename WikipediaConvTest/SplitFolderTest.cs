@@ -742,28 +742,96 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             string expected = @"にほん";
             VerifyFileNameToSortKeyJP(input, expected);
         }
-        
+
         [Test]
-        public void RunSplitFolder()
+        public void TestFileNameToSortKey_Japanese_Katakana()
         {
-            /*
-            EPubArchiver archiver = new EPubArchiver();
-            DirectoryInfo di = new DirectoryInfo(@"../../../../test");
-            archiver.Archive(di.GetFiles("*.html"), Path.Combine(di.FullName, "test.epub"));
-             * */
-            /*
-            SplitFolder spliter = new SplitFolder(new DirectoryInfo(@"../../../../ePub2"));
-            spliter.Split();
-             * */
-            var di = new DirectoryInfo(@"../../../../pdf");
-            SplitFolder spliter = new SplitFolder(di, di, new JapaneseTactics());
-            spliter.Extension = ".wiki";
-            spliter.Split();
+            string input = @"I:hoge\\ニホン_日本.html";
+            string expected = @"ニホン";
+            VerifyFileNameToSortKeyJP(input, expected);
+        }
+
+        [Test]
+        public void TestFileNameToSortKey_Japanese_KatakanaDakuten()
+        {
+            string input = @"I:hoge\\ニホンゴ_日本.html";
+            string expected = @"ニホンゴ";
+            VerifyFileNameToSortKeyJP(input, expected);
+        }
+
+        // [Test]
+        public void PrintCodeTable()
+        {
+            int count = 0;
+            Console.WriteLine();
+            for (char kata = 'ぁ'; kata < 'ン' + 5; kata++)
+            {
+                Console.Write(kata + " ");
+                if (count++ % 10 == 0)
+                    Console.WriteLine();
+            }
+        }
+
+        [Test]
+        public void TestFileNameToSortKey_Japanese_Katakana_Dakuten_Vu()
+        {
+            string input = @"I:hoge\\ヴァンパイア_吸血鬼.html";
+            string expected = @"ヴァンパイア";
+            VerifyFileNameToSortKeyJP(input, expected);
+        }
+
+        [Test]
+        public void TestFileNameToSortKey_Japanese_RemoveSymbol()
+        {
+            string input = @"I:hoge\\らき☆すた_らきすたの星ってこれだっけ？.html";
+            string expected = @"らきすた";
+            VerifyFileNameToSortKeyJP(input, expected);
+        }
+
+
+        [Test]
+        public void TestLookupSortChar_Japanese_Katakana_Dakuten_Vu()
+        {
+            string input = @"ヴァンパイア";
+            string expected = @"あ";
+            VerifyLookupSortCharJP(input, 0, expected);
+        }
+
+        [Test]
+        public void TestLookupSortChar_Japanese_Katakana_SmallA()
+        {
+            string input = @"ヴァンパイア";
+            string expected = @"あ";
+            VerifyLookupSortCharJP(input, 1, expected);
+        }
+
+        [Test]
+        public void TestLookupSortChar_Japanese_Katakana_SmallTu()
+        {
+            string input = @"いっかしょ";
+            string expected = @"た";
+            VerifyLookupSortCharJP(input, 1, expected);
+        }
+
+        [Test]
+        public void TestLookupSortChar_Japanese_Katakana_Hatsuon()
+        {
+            string input = @"ヴァンパイア";
+            string expected = @"は";
+            VerifyLookupSortCharJP(input, 3, expected);
         }
 
         private static void VerifyFileNameToSortKeyJP(string input, string expected)
         {
             VerifyFileNameToSortKeyGeneric(input, expected, true);
+        }
+
+        private static void VerifyLookupSortCharJP(string input, int start, string expected)
+        {
+            var di = new DirectoryInfo("./");
+            var folder = new SplitFolder(di, di, new JapaneseTactics());
+            string actual = folder.LookupSortChar(input, start);
+            Assert.AreEqual(expected, actual);
         }
 
         private static void VerifyFileNameToSortKeyGeneric(string input, string expected, bool japanese)
@@ -782,5 +850,27 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         {
             VerifyFileNameToSortKeyGeneric(input, expected, false);
         }
+
+
+        // below here is not test, some experiment.
+        // [Test]
+        public void RunSplitFolder()
+        {
+            /*
+            EPubArchiver archiver = new EPubArchiver();
+            DirectoryInfo di = new DirectoryInfo(@"../../../../test");
+            archiver.Archive(di.GetFiles("*.html"), Path.Combine(di.FullName, "test.epub"));
+             * */
+            /*
+            SplitFolder spliter = new SplitFolder(new DirectoryInfo(@"../../../../ePub2"));
+            spliter.Split();
+             * */
+            var di = new DirectoryInfo(@"../../../../pdf");
+            SplitFolder spliter = new SplitFolder(di, di, new JapaneseTactics());
+            spliter.Extension = ".wiki";
+            spliter.Split();
+        }
+
+
     }
 }

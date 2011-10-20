@@ -804,6 +804,7 @@ namespace WikipediaConv
                     bool isJapanese = IsJapanese(file);
 
                     Dumper gen = Dumper.CreateRawDumper(file, isJapanese);
+                    di = gen.WorkingFolder;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                     {
                         MessageBox.Show("generate html cancelled");
@@ -811,14 +812,13 @@ namespace WikipediaConv
                         // return;
                     }
 
-                    SplitTask split = new SplitTask(gen.WorkingFolder, isJapanese);
+                    SplitTask split = new SplitTask(di, isJapanese);
                     split.Extension = ".wiki";
                     if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
                     {
                         MessageBox.Show("split folder cancelled");
                         return;
                     }
-                    di = di ?? gen.WorkingFolder;
                 }
 
                 if (di != null)

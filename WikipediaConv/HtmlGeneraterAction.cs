@@ -75,7 +75,7 @@ namespace WikipediaConv
                 string path = GetHtmlName(pi, di);
                 _path = path; // for debug.
                 // ignore redirect.
-                if (!IsRedirect(formattedContent))
+                if (!IsSkipCandidate(path, formattedContent))
                 {
                     using (StreamWriter sw = new StreamWriter(path))
                     {
@@ -97,9 +97,38 @@ namespace WikipediaConv
             _notify.NotifyEnd();
         }
 
-        private bool IsRedirect(string formattedContent)
+        static internal bool IsSkipCandidate(string wikiName, string formattedContent)
+        {
+            if (IsRedirect(formattedContent))
+                return true;
+            if (IsSakujoIrai(wikiName))
+                return true;
+            if (IsTemplate(wikiName))
+                return true;
+            if (IsCategory(wikiName))
+                return true;
+            return false;
+        }
+
+        internal static bool IsCategory(string wikiName)
+        {
+            return wikiName.StartsWith("Category:");
+        }
+
+        internal static bool IsTemplate(string wikiName)
+        {
+            return wikiName.StartsWith("Template:");
+        }
+
+        internal static bool IsSakujoIrai(string wikiName)
+        {
+            return wikiName.StartsWith("Wikipedia:削除依頼");
+        }
+
+        static internal bool IsRedirect(string formattedContent)
         {
             return formattedContent.StartsWith("#REDIRECT ") ||
+                formattedContent.StartsWith("#redirect ") ||
                 formattedContent.StartsWith("#転送 ");
         }
 
@@ -110,13 +139,21 @@ namespace WikipediaConv
             string baseName = WikiNameToFileBaseName(wikiName);
             string fname = "_" + baseName + Extension;
             if (!String.IsNullOrEmpty(pi.Yomi))
-                fname = pi.Yomi.Replace("*", "") + fname;
-                /*
-            else
-                Debugger.Break();
-                 * */
-            string path = Path.Combine(di.FullName, fname);
-            return path;
+                fname = pi.Yomi + fname;
+            try
+            {
+                string path = Path.Combine(di.FullName, fname);
+                return path;
+            }
+            catch (System.NotSupportedException ex)
+            {
+                Debug.WriteLine("combine: ");
+                Debug.WriteLine("dir=" + di.FullName);
+                Debug.WriteLine("fname=" + fname);
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine(ex.StackTrace.ToString());
+                throw;
+            }
         }
 
         internal static string WikiNameToFileBaseName(string wikiName)

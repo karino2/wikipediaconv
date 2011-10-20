@@ -57,7 +57,7 @@ namespace WikipediaConv
     {
         public string RemoveUnsupportCharacter(string fname)
         {
-            return Regex.Replace(fname, "[^a-zA-Z0-9あ-ん]", "");
+            return Regex.Replace(fname, "[^a-zA-Z0-9ぁ-んァ-ンヵヶヴ]", "");
         }
 
         public IEnumerable<char> Alphabets
@@ -91,24 +91,37 @@ namespace WikipediaConv
                 return "a";
             if(Inside('0', '9', c))
                 return "0";
-            if(Inside('あ', 'お', c))
+            if(Inside('ぁ', 'お', c) ||
+               Inside('ァ', 'オ', c) ||
+                c == 'ヴ')
                 return "あ";
-            if (Inside('か', 'こ', c))
+            if (Inside('か', 'ご', c) ||
+                Inside('カ', 'ゴ', c) ||
+                c == 'ヵ' || c == 'ヶ')
                 return "か";
-            if (Inside('さ', 'そ', c))
+            if (Inside('さ', 'ぞ', c) ||
+                Inside('サ', 'ゾ', c))
                 return "さ";
-            if (Inside('た', 'と', c))
+            if (Inside('た', 'ど', c) ||
+                Inside('タ', 'ド', c))
                 return "た";
-            if (Inside('な', 'の', c))
+            if (Inside('な', 'の', c) ||
+                Inside('ナ', 'ノ', c))
                 return "な";
-            if (Inside('は', 'ほ', c))
+            if (Inside('は', 'ぽ', c) ||
+                Inside('ハ', 'ポ', c))
                 return "は";
-            if (Inside('ま', 'も', c))
+            if (Inside('ま', 'も', c) ||
+                Inside('マ', 'モ', c))
                 return "ま";
-            if (Inside('や', 'よ', c))
+            if (Inside('ゃ', 'よ', c) ||
+                Inside('ャ', 'ヨ', c))
                 return "や";
-            if (Inside('ら', 'ろ', c))
+            /*
+            if (Inside('わ', 'ん', c) ||
+                Inside('ワ', 'ン', c))
                 return "ら";
+             * */
             return "わ";
         }
 
@@ -121,17 +134,15 @@ namespace WikipediaConv
 
     public class SplitFolder
     {
-        public virtual FileInfo[] Files
+        public virtual IEnumerable<FileInfo> FileEnum
         {
             get
             {
-                return Current.GetFiles();
+                return Current.EnumerateFiles();
             }
         }
-
         DirectoryInfo Base { get; set; }
         internal DirectoryInfo Current { get; set; }
-        public int UpperFileLimit { get; set; }
 
         public string Extension { get; set; }
 
@@ -158,12 +169,17 @@ namespace WikipediaConv
             Extension = ".html";
         }
 
-        public bool NeedSplit
+
+        private static bool BiggerThanLimit(IEnumerable<FileInfo> fileEnum, int upperLimit)
         {
-            get
+            int count = 0;
+            foreach (var f in fileEnum)
             {
-                return Files.Length >= UpperFileLimit;
+                count++;
+                if (count >= upperLimit)
+                    return true;
             }
+            return false;
         }
 
         static int ChildIndex(DirectoryInfo di)
@@ -246,11 +262,24 @@ namespace WikipediaConv
             return root;
         }
 
+        bool IsEmpty(DirectoryInfo di)
+        {
+            foreach (var f in di.EnumerateFiles())
+            {
+                return false;
+            }
+            foreach (var d in di.EnumerateDirectories())
+            {
+                return false;
+            }
+            return true;
+        }
+
         private void RemoveUnusedDirectories()
         {
             foreach (var dir in Current.GetDirectories())
             {
-                if (dir.GetFiles().Length == 0)
+                if (IsEmpty(dir))
                     dir.Delete();
             }
         }
@@ -262,7 +291,7 @@ namespace WikipediaConv
 
         private void SortToSubdirectories()
         {
-            foreach (var file in Files)
+            foreach (var file in FileEnum)
             {
                 string dest = GetMatchedSubdirectoryPath(file);
                 if(dest != Current.FullName)
@@ -296,8 +325,14 @@ namespace WikipediaConv
             string key = FileNameToSortKey(file);
             if (key.Length == untilCur.Length)
                 return Current.FullName;
-            string nextHead = _tactics.Lookup(key.Substring(untilCur.Length, 1));
+            string nextHead = LookupSortChar(key, untilCur.Length);
             return Path.Combine(Current.FullName, nextHead);
+        }
+
+        internal string LookupSortChar(string key, int curLen)
+        {
+            string nextHead = _tactics.Lookup(key.Substring(curLen, 1));
+            return nextHead;
         }
 
         internal string FileNameToSortKey(FileInfo file)
@@ -342,14 +377,25 @@ namespace WikipediaConv
 
         void EnsureSubdirectory(char c)
         {
+            /* // this code is very slow.
             var dis = Current.GetDirectories(c.ToString());
             if (dis.Length == 0)
+             * */
+            var di = GetDirectoryInfo(c);
+            if (!di.Exists) 
                 CreateSubdirectory(c);
+        }
+
+        private DirectoryInfo GetDirectoryInfo(char c)
+        {
+            return new DirectoryInfo(Path.Combine(Current.FullName, c.ToString()));
         }
 
         internal virtual void CreateSubdirectory(char c)
         {
-            Current.CreateSubdirectory(c.ToString());
+            var di = GetDirectoryInfo(c);
+            di.Create();
+            // Current.CreateSubdirectory(c.ToString());
         }
 
         public bool SubFolderExists
@@ -366,7 +412,8 @@ namespace WikipediaConv
         {
             get
             {
-                return Current.GetFiles("*" + Extension).Length > MaxFileNum;
+                return BiggerThanLimit(Current.EnumerateFiles("*" + Extension), MaxFileNum);
+                // return Current.GetFiles("*" + Extension).Length > MaxFileNum;
             }
         }
     }
