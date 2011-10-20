@@ -94,7 +94,6 @@ namespace WikipediaConv
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace.ToString());
             }
-            _notify.NotifyEnd();
         }
 
         static internal bool IsSkipCandidate(string wikiName, string formattedContent)

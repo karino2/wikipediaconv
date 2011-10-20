@@ -458,7 +458,6 @@ namespace WikipediaConv
 
             memoryIndexer.AddDocument(d);
 
-            _notify.NotifyEnd();
         }
 
 

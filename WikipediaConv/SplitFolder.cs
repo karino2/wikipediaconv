@@ -159,12 +159,15 @@ namespace WikipediaConv
         public SplitFolder(DirectoryInfo baseDi, DirectoryInfo current) : this(baseDi, current, new EnglishTactics())
         {
         }
+
+        public DirectoryInfo StartDirectory { get; set; }
         public SplitFolder(DirectoryInfo baseDi, DirectoryInfo current, ISplitTactics tactics)
         {
             Abort = false;
             _tactics = tactics;
             Base = new DirectoryInfo(baseDi.FullName.TrimEnd('\\'));
             Current = current;
+            StartDirectory = current;
             MaxFileNum = 100;
             Extension = ".html";
         }
@@ -200,7 +203,8 @@ namespace WikipediaConv
         public void StartSplit()
         {
             Abort = false;
-            ForestNode<DirectoryInfo> root = DirectoryForest(Current);
+            Current = StartDirectory;
+            ForestNode<DirectoryInfo> root = DirectoryForest(StartDirectory);
             _walker = root.Walker;
         }
 
@@ -230,24 +234,11 @@ namespace WikipediaConv
 
         public void Split()
         {
-            Abort = false;
-            ForestNode<DirectoryInfo> root = DirectoryForest(Current);
-            var walker = root.Walker;
-            foreach(var node in walker)
+            StartSplit();
+            while (IsRunning)
             {
-                if (Abort)
-                    return;
-                if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
-                    continue;
-                Current = node.Element;
-                if (TooMuchFile)
-                {
-                    CreateSubdirectories();
-                    SortToSubdirectories();
-                    RemoveUnusedDirectories();
-                }
+                SplitOne();
             }
-
         }
 
         public static ForestNode<DirectoryInfo> DirectoryForest(DirectoryInfo cur)
@@ -344,35 +335,12 @@ namespace WikipediaConv
             return fname.ToLowerInvariant().Replace(" ", "");
         }
 
-        /*
-        private bool InsideNormalRange(string nextHead)
-        {
-            return nextHead[0] >= 'a' && nextHead[0] <= 'z';
-        }*/
-
         void CreateSubdirectories()
         {
             foreach (char c in _tactics.Alphabets)
             {
                 EnsureSubdirectory(c);
             }
-            /*
-            for (char c = 'a'; c <= 'z'; c++)
-            {
-                EnsureSubdirectory(c);
-            }
-            for (char c = '0'; c <= '9'; c++)
-            {
-                EnsureSubdirectory(c);
-            }
-            if (Japanese)
-            {
-                for (char c = 'あ'; c <= 'ん'; c++)
-                {
-                    EnsureSubdirectory(c);
-                }
-            }
-             * */
         }
 
         void EnsureSubdirectory(char c)
@@ -398,13 +366,6 @@ namespace WikipediaConv
             // Current.CreateSubdirectory(c.ToString());
         }
 
-        public bool SubFolderExists
-        {
-            get
-            {
-                return Current.GetDirectories().Length != 0;
-            }
-        }
 
         public int MaxFileNum { get; set; }
 

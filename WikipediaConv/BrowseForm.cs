@@ -767,12 +767,14 @@ namespace WikipediaConv
                     // return;
                 }
 
+                /*
                 SplitTask split = new SplitTask(gen.WorkingFolder, isJapanese);
                 if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
                 {
                     MessageBox.Show("split folder cancelled");
                     return;
                 }
+                 * */
                 di = di ?? gen.WorkingFolder;
             }
 
@@ -812,6 +814,7 @@ namespace WikipediaConv
                         // return;
                     }
 
+                    /*
                     SplitTask split = new SplitTask(di, isJapanese);
                     split.Extension = ".wiki";
                     if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
@@ -819,6 +822,7 @@ namespace WikipediaConv
                         MessageBox.Show("split folder cancelled");
                         return;
                     }
+                     * */
                 }
 
                 if (di != null)

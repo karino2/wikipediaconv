@@ -38,7 +38,6 @@ namespace WikipediaConv
     public interface INotifyDecoder
     {
         void ReportProgress(int percentage, DecodingProgress.State status, string message);
-        void NotifyEnd();
 
         // This is not Notify. Maybe bat name.
         bool IsActive();
@@ -114,6 +113,12 @@ namespace WikipediaConv
         /// Whether the decoding process should be aborted
         /// </summary>
         private bool abortDecoding;
+
+        private bool RequestSuspend { get; set; }
+
+        public int StartSplitLimit { get; set; }
+        private int _currentHandledFileNum = 0;
+
         /// <summary>
         /// Percent done for bzip2 block location progress
         /// </summary>
@@ -148,6 +153,8 @@ namespace WikipediaConv
         /// </summary>
         private bool multithreadedIndexing = false;
 
+        public SplitFolder SplitFolder { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BzipReader"/> class.
         /// </summary>
@@ -156,7 +163,6 @@ namespace WikipediaConv
         {
             filePath = path;
             _action = action;
-
 
             multithreadedIndexing = (Environment.ProcessorCount > 1);
             abortDecoding = false;
@@ -397,12 +403,14 @@ namespace WikipediaConv
 
                 if (multithreadedIndexing)
                 {
-                    ThreadPool.QueueUserWorkItem(TokenizeAndAdd, pi);
+                    ThreadPool.QueueUserWorkItem(HandleOnePage, pi);
                 }
                 else
                 {
-                    TokenizeAndAdd(pi);
+                    HandleOnePage(pi);
                 }
+
+                SplitIfNecessary();
 
                 // Store the last successful title start position
 
@@ -418,6 +426,15 @@ namespace WikipediaConv
                 }
 
                 firstRun = false;
+
+                if (RequestSuspend)
+                {
+                    WaitTillFinish();
+                    while (RequestSuspend)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(5));
+                    }
+                }
             }
 
             // Now calculate how many characters we need to save for next block
@@ -459,6 +476,19 @@ namespace WikipediaConv
             previousBlockEnd = end;
 
             return charsToSave;
+        }
+
+        private void SplitIfNecessary()
+        {
+            if (StartSplitLimit != -1 && _currentHandledFileNum > StartSplitLimit)
+            {
+                Suspend();
+                // split, can't abort now...
+                SplitFolder.Split();
+                _currentHandledFileNum = 0;
+
+                Resume();
+            }
         }
 
         static internal string GetYomi(string wikiName, string currentText, int idEnd, int topicEnd)
@@ -570,9 +600,12 @@ namespace WikipediaConv
         /// Tokenizes and adds the specified PageInfo object to Lucene index
         /// </summary>
         /// <param name="state">PageInfo object</param>
-        private void TokenizeAndAdd(object state)
+        private void HandleOnePage(object state)
         {
             _action.Action(state);
+            Interlocked.Decrement(ref activeThreads);
+
+            _currentHandledFileNum++;
         }
 
         private void FlashAction()
@@ -819,10 +852,6 @@ namespace WikipediaConv
             return activeThreads != 0;
         }
 
-        public void NotifyEnd()
-        {
-            Interlocked.Decrement(ref activeThreads);
-        }
         #endregion
 
         #region Misc
@@ -842,6 +871,17 @@ namespace WikipediaConv
             {
                 abortDecoding = true;
             }
+        }
+
+        public void Suspend()
+        {
+            RequestSuspend = true;
+            WaitTillFinish();
+        }
+
+        public void Resume()
+        {
+            RequestSuspend = false;
         }
 
         public virtual void OnProgressChanged(ProgressChangedEventArgs e)
