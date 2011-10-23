@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package version="2.0" xmlns="http://www.idpf.org/2007/opf"
+         unique-identifier="BookId">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"
+            xmlns:opf="http://www.idpf.org/2007/opf">
+    <dc:title>Sample .epub eBook</dc:title>
+    <dc:creator opf:role="aut">epublib.codeplex.com</dc:creator>
+    <dc:language>en-US</dc:language>
+    <dc:rights>Public Domain</dc:rights>
+    <dc:publisher>Economist.com</dc:publisher>
+    <dc:identifier id="BookId">urn:uuid:jedisaber.com06282007214712</dc:identifier>
+  </metadata>
+  <manifest>
+  </manifest>
+  <spine toc="ncx">
+  </spine>
+</package>
