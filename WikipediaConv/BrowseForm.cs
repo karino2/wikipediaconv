@@ -662,7 +662,6 @@ namespace WikipediaConv
 
             bool _abort = false;
             int _epubChapterNum = 10;
-            EPubArchiver _archiver;
 
             Action<IEnumerable<FileInfo>, string> Archive;
             public string Extension { get; set; }

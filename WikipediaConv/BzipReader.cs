@@ -524,9 +524,10 @@ namespace WikipediaConv
             {
                 if (!yomiFound)
                 {
-                    if (line.StartsWith("'''"))
+                    int quoteStart = line.IndexOf("'''");
+                    if (quoteStart != -1)
                     {
-                        int titleEnd = line.IndexOf("'''", 3);
+                        int titleEnd = line.IndexOf("'''", quoteStart+3);
                         if (titleEnd != -1)
                         {
                             int yomiStart = line.IndexOf("（", titleEnd);
@@ -539,10 +540,17 @@ namespace WikipediaConv
                                     yomiEnd = line.IndexOf(")", yomiStart);
                                 if (yomiEnd != -1)
                                 {
-                                    yomi = line.Substring(yomiStart + 1, yomiEnd - (yomiStart + 1));
-                                    yomi = Sanitize(yomi);
-                                    if(StartWithValidYomi(yomi))
-                                        yomiFound = true;
+                                    var quoteCont = line.Substring(yomiStart + 1, yomiEnd - (yomiStart + 1));
+                                    var yomis = quoteCont.Split('、');
+                                    if (yomis.Length == 1)
+                                        yomis = yomis[0].Split(',');
+                                    foreach (var yomiTmp in yomis)
+                                    {
+                                        yomi = Sanitize(yomiTmp);
+                                        yomi = ChopQuoteIfNecessary(yomi);
+                                        if (StartWithValidYomi(yomi))
+                                            return yomi;
+                                    }
                                     continue;
                                 }
                             }
@@ -567,11 +575,16 @@ namespace WikipediaConv
                 defaultSort = Sanitize(defaultSort);
             }
 
-            if (yomiFound)
-                return yomi;
             if (!String.IsNullOrEmpty(defaultSort) && StartWithValidYomi(defaultSort))
                 return defaultSort;
             return WikiNameToYomi(wikiName);
+        }
+
+        private static string ChopQuoteIfNecessary(string yomi)
+        {
+            if (yomi.StartsWith("'''") && yomi.EndsWith("'''") && yomi.Length > 6)
+                return yomi.Substring(3, yomi.Length - 6);
+            return yomi;
         }
 
         private static string WikiNameToYomi(string wikiName)
