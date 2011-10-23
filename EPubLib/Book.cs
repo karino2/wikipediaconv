@@ -50,16 +50,17 @@ namespace EPubLib
             {
                 zippedBook.ForceNoCompression = true;
                 ZipEntry mimetype = zippedBook.AddEntry("mimetype", "", "application/epub+zip");
+                Encoding utf8sEnc = Encoding.GetEncoding("UTF-8");
 
                 zippedBook.ForceNoCompression = false;
 
                 zippedBook.AddEntry("container.xml", "META-INF", GetResource("EPubLib.Files.META_INF.container.xml"));
-                zippedBook.AddEntry("content.opf", "OEBPS", GetContentOpf());
-                zippedBook.AddEntry("toc.ncx", "OEBPS", GetToc());
+                zippedBook.AddEntry("content.opf", "OEBPS", GetContentOpf(), Encoding.UTF8);
+                zippedBook.AddEntry("toc.ncx", "OEBPS", GetToc(), Encoding.UTF8);
 
                 foreach (Chapter chapter in GetChapters())
                 {
-                    zippedBook.AddEntry("chapter" + chapter.Number.ToString("000") + ".xhtml", "OEBPS", chapter.Content);
+                    zippedBook.AddEntry("chapter" + chapter.Number.ToString("000") + ".xhtml", "OEBPS", chapter.Content, Encoding.UTF8);
                 }
                 foreach (FileItem image in GetImages())
                 {

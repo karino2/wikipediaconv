@@ -163,10 +163,10 @@
     <value>{0}から始まるブロックの伸張に失敗しました: {1}</value>
   </data>
   <data name="FinishingInHours" xml:space="preserve">
-    <value>およそ{0}:{1}</value>
+    <value>およそ{0}時間{1}分</value>
   </data>
   <data name="FinishingSoon" xml:space="preserve">
-    <value>すぐ</value>
+    <value>間もなく完了</value>
   </data>
   <data name="FlushingDocumentsToDisk" xml:space="preserve">
     <value>ドキュメントをディスクに出力中</value>
@@ -238,7 +238,7 @@
     <value>UTF8デコーダが変換を完了できません</value>
   </data>
   <data name="WaitingForTokenizers" xml:space="preserve">
-    <value>{0} のトークン化スレッドの終了を待機中</value>
+    <value>{0}個のトークン化スレッド終了を待機中</value>
   </data>
   <data name="WindowTitle" xml:space="preserve">
     <value>BzReader - {0}</value>
