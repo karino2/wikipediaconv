@@ -677,7 +677,18 @@ namespace WikipediaConv
 
             public string SourceExtension { get; set; }
 
+            Thread archiveThread;
+
             public void Start()
+            {
+                archiveThread = new Thread(ArchiveAsync);
+
+                archiveThread.Start();
+
+            }
+
+
+            public void ArchiveAsync()
             {
                 ReportProgress(0, DecodingProgress.State.Running, "start archive");
                 int count = 0;
@@ -685,7 +696,7 @@ namespace WikipediaConv
                 foreach (var node in _walker)
                 {
                     if (_abort)
-                        return;
+                        break; // to call ReportProgress Finished for closing dialog.
                     if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
                         continue;
                     var di = node.Element;
@@ -731,7 +742,11 @@ namespace WikipediaConv
 
             public void Abort()
             {
-                _abort = true;
+                if (archiveThread != null &&
+                    archiveThread.IsAlive)
+                {
+                    _abort = true;
+                }
             }
             public void ReportProgress(int percentage, DecodingProgress.State state, string message)
             {
