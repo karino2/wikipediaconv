@@ -601,6 +601,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         public void TestHelloEPub()
         {
             Book book = new Book();
+            book.Language = "ja";
             //You can also use the factory, FileItem.Create(FileItemType.XHTML).
             //For images, you must use the factory, FileItem.Create(FileItemType.JPEG), etc
             Chapter chapter1 = new Chapter()
