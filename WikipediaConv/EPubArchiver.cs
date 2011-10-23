@@ -16,7 +16,7 @@ namespace WikipediaConv
             int chapterNumber = 1;
             foreach (var file in files)
             {
-                using (StreamReader sr = new StreamReader(file.FullName))
+                using (StreamReader sr = new StreamReader(file.FullName, System.Text.Encoding.GetEncoding("utf-8")))
                 {
                     string contents = sr.ReadToEnd();
                     string title = GetTitle(contents);
