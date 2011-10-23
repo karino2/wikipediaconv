@@ -117,6 +117,9 @@ namespace WikipediaConv
             if (Inside('ゃ', 'よ', c) ||
                 Inside('ャ', 'ヨ', c))
                 return "や";
+            if (Inside('ら', 'ろ', c) ||
+                Inside('ラ', 'ロ', c))
+                return "ら";
             /*
             if (Inside('わ', 'ん', c) ||
                 Inside('ワ', 'ン', c))
@@ -283,7 +286,22 @@ namespace WikipediaConv
 
         internal virtual void MoveTo(FileInfo target, string destPath)
         {
-            target.MoveTo(destPath);
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    target.MoveTo(destPath);
+                    return;
+                }
+                catch (IOException)
+                {
+                    var fname = Path.GetFileNameWithoutExtension(destPath);
+                    var targetPath = Path.GetDirectoryName(destPath);
+                    var extension = Path.GetExtension(destPath);
+                    fname += 'X';
+                    destPath = Path.Combine(targetPath, fname + extension);
+                }
+            }
         }
 
         private bool SortToSubdirectories()
