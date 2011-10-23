@@ -12,6 +12,7 @@ namespace WikipediaConv
         public void Archive(IEnumerable<FileInfo> files, string epubPath)
         {
             Book book = new Book();
+            book.Language = "ja";
             int chapterNumber = 1;
             foreach (var file in files)
             {
