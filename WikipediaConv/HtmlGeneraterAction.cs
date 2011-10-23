@@ -121,9 +121,8 @@ namespace WikipediaConv
 
         static internal bool IsRedirect(string formattedContent)
         {
-            return formattedContent.StartsWith("#REDIRECT ") ||
-                formattedContent.StartsWith("#redirect ") ||
-                formattedContent.StartsWith("#転送 ");
+            return formattedContent.StartsWith("#REDIRECT", StringComparison.CurrentCultureIgnoreCase) ||
+                formattedContent.StartsWith("#転送");
         }
 
 
