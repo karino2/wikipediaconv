@@ -50,7 +50,6 @@ namespace EPubLib
             {
                 zippedBook.ForceNoCompression = true;
                 ZipEntry mimetype = zippedBook.AddEntry("mimetype", "", "application/epub+zip");
-                Encoding utf8sEnc = Encoding.GetEncoding("UTF-8");
 
                 zippedBook.ForceNoCompression = false;
 
