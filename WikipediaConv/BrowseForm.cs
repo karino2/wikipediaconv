@@ -659,9 +659,8 @@ namespace WikipediaConv
                             RemoveYomi(Path.GetFileNameWithoutExtension(flist[flist.Count-1].Name)) + Extension;
 
                         Archive(flist, Path.Combine(dirname, epubName));
+                        ReportProgress(0, DecodingProgress.State.Running, "archive: " + count++ + ":" + flist[0].Name);
                         flist.ForEach(fi => fi.Delete());
-                        ReportProgress(0, DecodingProgress.State.Running, "archive: " + count++);
-                        Thread.Sleep(5);
                     }
 
                 }

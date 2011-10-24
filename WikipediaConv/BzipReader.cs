@@ -490,7 +490,7 @@ namespace WikipediaConv
             while (SplitFolder.IsRunning)
             {
                 SplitFolder.SplitOne();
-                ReportProgress(0, DecodingProgress.State.Running, "split: " + count++);
+                ReportProgress(0, DecodingProgress.State.Running, "split: " + count++ + " :" + SplitFolder.Current.FullName);
             }
         }
 
