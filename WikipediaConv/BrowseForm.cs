@@ -661,7 +661,7 @@ namespace WikipediaConv
             ForestWalker<DirectoryInfo> _walker;
 
             bool _abort = false;
-            int _epubChapterNum = 10;
+            int _epubChapterNum = Properties.Settings.Default.ArchiveNum;
 
             Action<IEnumerable<FileInfo>, string> Archive;
             public string Extension { get; set; }
