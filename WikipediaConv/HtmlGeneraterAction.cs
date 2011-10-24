@@ -38,19 +38,28 @@ namespace WikipediaConv
 
         internal DirectoryInfo TargetPath(PageInfo pi)
         {
-            return WorkingFolder;
+            return OutputRoot;
         }
 
-        public DirectoryInfo WorkingFolder
+        DirectoryInfo _workingFolder = null;
+
+        public DirectoryInfo OutputRoot
         {
             get
             {
+                if (_workingFolder != null)
+                    return _workingFolder;
                 DirectoryInfo di = new DirectoryInfo(Path.Combine(_base.FullName, RelativePath));
                 if (!di.Exists)
                 {
                     di.Create();
                 }
-                return di;
+                _workingFolder = di;
+                return _workingFolder;
+            }
+            set
+            {
+                _workingFolder = value;
             }
         }
 

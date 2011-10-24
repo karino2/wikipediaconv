@@ -724,15 +724,14 @@ namespace WikipediaConv
             foreach (string file in files)
             {
                 bool isJapanese = IsJapanese(file);
-                Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese);
+                Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese, di);
+                di = di ?? gen.WorkingFolder;
                 if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
                     MessageBox.Show("generate html cancelled");
                     // tmp fall through. 
                     // return;
                 }
-
-                di = di ?? gen.WorkingFolder;
             }
 
             if (di != null)
@@ -762,8 +761,8 @@ namespace WikipediaConv
                 {
                     bool isJapanese = IsJapanese(file);
 
-                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese);
-                    di = gen.WorkingFolder;
+                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese, di);
+                    di = di ?? gen.WorkingFolder;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                     {
                         MessageBox.Show("generate html cancelled");
