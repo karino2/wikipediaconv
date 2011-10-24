@@ -42,7 +42,7 @@ namespace WikipediaConv
 
         private static SplitFolder CreateSplitFolder(bool isJapanese, Dumper dumper)
         {
-            SplitFolder sf = new SplitFolder(dumper.WorkingFolder, GetTactics(isJapanese));
+            SplitFolder sf = new SplitFolder(dumper.OutputRoot, GetTactics(isJapanese));
             return sf;
         }
 
@@ -68,6 +68,6 @@ namespace WikipediaConv
             return dumper;
         }
         public ILongTask LongTask { get { return _bzipReader; } }
-        public DirectoryInfo WorkingFolder { get { return _action.OutputRoot; } }
+        public DirectoryInfo OutputRoot { get { return _action.OutputRoot; } }
     }
 }
