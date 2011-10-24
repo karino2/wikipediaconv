@@ -593,58 +593,6 @@ namespace WikipediaConv
 
         #endregion
 
-        public class SplitTask : ILongTask
-        {
-            // no progress information now.
-            public event ProgressChangedEventHandler ProgressChanged;
-
-            SplitFolder _splitter;
-            public SplitTask(DirectoryInfo workDir, bool isJapanese)
-            {
-                if(isJapanese)
-                    _splitter = new SplitFolder(workDir, new JapaneseTactics());
-                else
-                    _splitter = new SplitFolder(workDir);
-            }
-
-            public string Extension { set { _splitter.Extension = value; } }
-
-            public void Start()
-            {
-                _abort = false;
-                ReportProgress(0, DecodingProgress.State.Running, "start split");
-                _splitter.StartSplit();
-                int count = 0;
-                while (_splitter.IsRunning)
-                {
-                    _splitter.SplitOne();
-                    ReportProgress(0, DecodingProgress.State.Running, "split: " + count++);
-                    if (_abort)
-                    {
-                        ReportProgress(100, DecodingProgress.State.Failure, "abort split");
-                        return;
-                    }
-                }
-                ReportProgress(100, DecodingProgress.State.Finished, "finish split");
-            }
-
-            bool _abort = false;
-
-            public void Abort()
-            {
-                _abort = true;
-            }
-
-            public void ReportProgress(int percentage, DecodingProgress.State state, string message)
-            {
-                DecodingProgress ip = CreateProgress(message, state);
-
-                ProgressChanged(this, new ProgressChangedEventArgs(percentage, ip));
-            }
-
-
-        }
-
         internal static DecodingProgress CreateProgress(string message, DecodingProgress.State state)
         {
             DecodingProgress ip = new DecodingProgress();
@@ -784,14 +732,6 @@ namespace WikipediaConv
                     // return;
                 }
 
-                /*
-                SplitTask split = new SplitTask(gen.WorkingFolder, isJapanese);
-                if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
-                {
-                    MessageBox.Show("split folder cancelled");
-                    return;
-                }
-                 * */
                 di = di ?? gen.WorkingFolder;
             }
 
@@ -830,16 +770,6 @@ namespace WikipediaConv
                         // tmp fall through. 
                         // return;
                     }
-
-                    /*
-                    SplitTask split = new SplitTask(di, isJapanese);
-                    split.Extension = ".wiki";
-                    if (DialogResult.OK != new ProgressDialog(split).ShowDialog(this))
-                    {
-                        MessageBox.Show("split folder cancelled");
-                        return;
-                    }
-                     * */
                 }
 
                 if (di != null)
@@ -853,21 +783,6 @@ namespace WikipediaConv
                         return;
                     }
                 }
-                /*
-                foreach (string file in fd.FileNames)
-                {
-                    bool isJapanese = IsJapanese(file);
-                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese);
-                    if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
-                    {
-                        MessageBox.Show("generate html cancelled");
-                        // tmp fall through. 
-                        // return;
-                    }
-
-
-                }
-                 * */
             }
         }
     }
