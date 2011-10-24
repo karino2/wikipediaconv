@@ -725,7 +725,7 @@ namespace WikipediaConv
             {
                 bool isJapanese = IsJapanese(file);
                 Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese, di);
-                di = di ?? gen.WorkingFolder;
+                di = di ?? gen.OutputRoot;
                 if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
                     MessageBox.Show("generate html cancelled");
@@ -762,7 +762,7 @@ namespace WikipediaConv
                     bool isJapanese = IsJapanese(file);
 
                     Dumper gen = Dumper.CreateRawDumper(file, isJapanese, di);
-                    di = di ?? gen.WorkingFolder;
+                    di = di ?? gen.OutputRoot;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                     {
                         MessageBox.Show("generate html cancelled");
