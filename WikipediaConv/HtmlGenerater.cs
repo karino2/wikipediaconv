@@ -30,9 +30,11 @@ namespace WikipediaConv
             return new EnglishTactics();
         }
 
-        public static Dumper CreateHtmlGenerater(string bzipPath, bool isJapanese)
+        public static Dumper CreateHtmlGenerater(string bzipPath, bool isJapanese, DirectoryInfo result)
         {
-            var dumper = new Dumper(bzipPath, DumpAction.CreateHtmlGeneraterAction(bzipPath));
+            DumpAction htmlAction = DumpAction.CreateHtmlGeneraterAction(bzipPath);
+            htmlAction.OutputRoot = result;
+            var dumper = new Dumper(bzipPath, htmlAction);
             SplitFolder sf = CreateSplitFolder(isJapanese, dumper);
             PostCreate(dumper, isJapanese, sf);
             return dumper;
@@ -55,15 +57,17 @@ namespace WikipediaConv
              * */
         }
 
-        public static Dumper CreateRawDumper(string bzipPath, bool isJapanese)
+        public static Dumper CreateRawDumper(string bzipPath, bool isJapanese, DirectoryInfo result)
         {
-            Dumper dumper =  new Dumper(bzipPath, DumpAction.CreateRawDumpAction(bzipPath));
+            DumpAction rawDump = DumpAction.CreateRawDumpAction(bzipPath);
+            rawDump.OutputRoot = result;
+            Dumper dumper =  new Dumper(bzipPath, rawDump);
             SplitFolder sf = CreateSplitFolder(isJapanese, dumper);
             sf.Extension = ".wiki";
             PostCreate(dumper, isJapanese, sf);
             return dumper;
         }
         public ILongTask LongTask { get { return _bzipReader; } }
-        public DirectoryInfo WorkingFolder { get { return _action.WorkingFolder; } }
+        public DirectoryInfo WorkingFolder { get { return _action.OutputRoot; } }
     }
 }
