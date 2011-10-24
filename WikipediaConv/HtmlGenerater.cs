@@ -47,7 +47,7 @@ namespace WikipediaConv
         private static void PostCreate(Dumper dumper, bool isJapanese, SplitFolder sf)
         {
             dumper._bzipReader.EnableYomi = isJapanese;
-            dumper.SetSplitFolder(sf, 5000);
+            dumper.SetSplitFolder(sf, Properties.Settings.Default.StartSplitLimit);
             // for debug
             /*
             sf.MaxFileNum = 2;

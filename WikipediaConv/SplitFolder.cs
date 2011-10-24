@@ -171,7 +171,7 @@ namespace WikipediaConv
             Base = new DirectoryInfo(baseDi.FullName.TrimEnd('\\'));
             Current = current;
             StartDirectory = current;
-            MaxFileNum = 100;
+            MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
             Extension = ".html";
         }
 
@@ -403,7 +403,6 @@ namespace WikipediaConv
             get
             {
                 return BiggerThanLimit(Current.EnumerateFiles("*" + Extension), MaxFileNum);
-                // return Current.GetFiles("*" + Extension).Length > MaxFileNum;
             }
         }
 
