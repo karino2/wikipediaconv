@@ -518,6 +518,7 @@ namespace WikipediaConv
             // TODO: we should extract to class later
             bool yomiFound = false;
             string yomi = null;
+            string title = null;
             string defaultSort = null;
             var lines = rawContent.Split('\n');
             foreach (var line in lines)
@@ -530,6 +531,7 @@ namespace WikipediaConv
                         int titleEnd = line.IndexOf("'''", quoteStart+3);
                         if (titleEnd != -1)
                         {
+                            var titleCand = line.Substring(quoteStart + 3, titleEnd - (quoteStart + 3));
                             int yomiStart = line.IndexOf("（", titleEnd);
                             if (yomiStart == -1)
                                 yomiStart = line.IndexOf("(", titleEnd);
@@ -540,16 +542,21 @@ namespace WikipediaConv
                                     yomiEnd = line.IndexOf(")", yomiStart);
                                 if (yomiEnd != -1)
                                 {
+                                    title = Sanitize(titleCand);
                                     var quoteCont = line.Substring(yomiStart + 1, yomiEnd - (yomiStart + 1));
                                     var yomis = quoteCont.Split('、');
                                     if (yomis.Length == 1)
                                         yomis = yomis[0].Split(',');
                                     foreach (var yomiTmp in yomis)
                                     {
-                                        yomi = Sanitize(yomiTmp);
-                                        yomi = ChopQuoteIfNecessary(yomi);
-                                        if (StartWithValidYomi(yomi))
-                                            return yomi;
+                                        string yomiCand = Sanitize(yomiTmp);
+                                        yomiCand = ChopQuoteIfNecessary(yomiCand);
+                                        if (StartWithValidYomi(yomiCand))
+                                        {
+                                            yomiFound = true;
+                                            yomi = yomiCand;
+                                            continue;                                            
+                                        }
                                     }
                                     continue;
                                 }
@@ -575,9 +582,37 @@ namespace WikipediaConv
                 defaultSort = Sanitize(defaultSort);
             }
 
-            if (!String.IsNullOrEmpty(defaultSort) && StartWithValidYomi(defaultSort))
+            // 1st: defaultSort is kana
+            if (StartWithKana(defaultSort))
+                    return defaultSort;
+
+            // 2nd () is kana
+            if (StartWithKana(yomi))
+                return yomi;
+            // 3rd ''' ''' is kana
+            if (StartWithKana(title))
+                return title;
+
+            var wikiYomi = WikiNameToYomi(wikiName);
+            wikiYomi = Sanitize(wikiYomi);
+            // 4th: wikiname is kana
+            if (StartWithKana(wikiYomi))
+                return wikiYomi;
+            // 5th: title is roman
+            if (StartWithRoman(title))
+                return title;
+            // 6th: () is roman
+            if (yomiFound)
+                return yomi;
+            // 7th: defaultsort is roman
+            if (StartWithRoman(defaultSort))
                 return defaultSort;
-            return WikiNameToYomi(wikiName);
+            if (StartWithRoman(wikiYomi))
+                return wikiYomi;
+
+            // no yomi.
+            return "わ";
+
         }
 
         private static string ChopQuoteIfNecessary(string yomi)
@@ -594,25 +629,37 @@ namespace WikipediaConv
             {
                 return match.Value;
             }
+            return null;
 
-            // no yomi.
-            return "わ";
         }
 
         private static string Sanitize(string defaultSort)
         {
-            defaultSort = defaultSort.Replace("*", "").Replace(":", "").Replace("/", "").Replace("\\", "");
+            if(defaultSort != null)
+                defaultSort = defaultSort.Replace("/", "").Replace(">", "").Replace("<", "").Replace("?", "").Replace(":", "").Replace("\"", "").Replace("\\", "").Replace("*", "").Replace("|", "").Replace(";", "");
+
             return defaultSort;
         }
 
         // TODO: dup regexp
         private static Regex yomiHeadRegex = new Regex("^[a-zA-Z0-9ぁ-んァ-ンヵヶヴ]+", RegexOptions.Compiled | RegexOptions.Singleline);
         private static Regex startValidYomiRegex = new Regex("^[a-zA-Z0-9ぁ-んァ-ンヵヶヴ]", RegexOptions.Compiled | RegexOptions.Singleline);
+        private static Regex startKanaRegex = new Regex("^[ぁ-んァ-ンヵヶヴ]+", RegexOptions.Compiled | RegexOptions.Singleline);
+        private static Regex startWithRomanRegex = new Regex("^[a-zA-Z0-9]", RegexOptions.Compiled | RegexOptions.Singleline);
         static internal bool StartWithValidYomi(string str)
         {
-            return startValidYomiRegex.IsMatch(str);
+            return !String.IsNullOrEmpty(str) && startValidYomiRegex.IsMatch(str);
         }
 
+        static internal bool StartWithKana(string str)
+        {
+            return !String.IsNullOrEmpty(str) && startKanaRegex.IsMatch(str);
+        }
+
+        static internal bool StartWithRoman(string str)
+        {
+            return !String.IsNullOrEmpty(str) && startWithRomanRegex.IsMatch(str);
+        }
 
         #region HandleDecodedData Related
         private void FinalizeAction(bool failed)

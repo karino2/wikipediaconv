@@ -64,8 +64,18 @@ namespace WikipediaConv
         {
             get
             {
+                /*
                 yield return 'a';
                 yield return '0';
+                 * */
+                for (char c = 'a'; c <= 'z'; c++)
+                {
+                    yield return c;
+                }
+                for (char c = '0'; c <= '9'; c++)
+                {
+                    yield return c;
+                }
                 yield return 'あ';
                 yield return 'か';
                 yield return 'さ';
@@ -88,9 +98,9 @@ namespace WikipediaConv
         {
             char c = str[0];
             if(Inside('a', 'z', c))
-                return "a";
+                return c.ToString();
             if(Inside('0', '9', c))
-                return "0";
+                return c.ToString();
             if(Inside('ぁ', 'お', c) ||
                Inside('ァ', 'オ', c) ||
                 c == 'ヴ')

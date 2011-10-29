@@ -165,6 +165,14 @@ namespace WikipediaConvTest
             Assert.AreEqual(expected, actual);
         }
 
+        [Test]
+        public void TestIsSkipCandidate_FileDesc()
+        {
+            bool expected = true;
+            bool actual = DumpAction.IsSkipCandidate("ファイル:", "normal content");
+            Assert.AreEqual(expected, actual);
+        }
+
         // BzipReader test. place here for a while
         [Test]
         public void TestGetYomi_nothing()
@@ -212,13 +220,6 @@ namespace WikipediaConvTest
             VerifyGetYomi("!dummy", input, expect);
         }
 
-        [Test]
-        public void TestGetYomi_DefaultSort_containSlash()
-        {
-            string input = "abc{{DEFAULTSORT:JPCERT/CC}}ghi";
-            string expect = "JPCERTCC";
-            VerifyGetYomi("!dummy", input, expect);
-        }
 
         private static void VerifyGetYomi(string wikiName, string input, string expect)
         {
@@ -234,6 +235,39 @@ namespace WikipediaConvTest
             string input = "abc{{デフォルトソート:*}}ghi";
             VerifyGetYomi("!dummy", input, expect);
         }
+
+        [Test]
+        public void TestGetYomi_DefaultSort_sanitizeSlash()
+        {
+            string input = "abc{{DEFAULTSORT:JPCERT/CC}}ghi";
+            string expect = "JPCERTCC";
+            VerifyGetYomi("!dummy", input, expect);
+        }
+
+        [Test]
+        public void TestGetYomi_DefaultSort_SanitizeOr()
+        {
+            string input = "abc{{DEFAULTSORT:JPCERT|CC}}ghi";
+            string expect = "JPCERTCC";
+            VerifyGetYomi("!dummy", input, expect);
+        }
+
+        [Test]
+        public void TestGetYomi_DefaultSort_SanitizeColon()
+        {
+            string input = "abc{{DEFAULTSORT:JPCERT:CC}}ghi";
+            string expect = "JPCERTCC";
+            VerifyGetYomi("!dummy", input, expect);
+        }
+
+        [Test]
+        public void TestGetYomi_DefaultSort_SanitizeLtGt()
+        {
+            string input = "abc{{DEFAULTSORT:JPCERT<>CC}}ghi";
+            string expect = "JPCERTCC";
+            VerifyGetYomi("!dummy", input, expect);
+        }
+
 
         // obsolete wrapper.
         static string CallGetYomi(string wikiName, string input)
@@ -287,6 +321,40 @@ abc{{DEFAULTSORT:def}}ghi";
 ";
             string expect = "かばやき";
             VerifyGetYomi("蒲焼", input, expect);
+        }
+
+        [Test]
+        public void TestGetYomi_priority_kana_prefered()
+        {
+            string input = @"'''アッガイ''' ('''ACGUY''') は、";
+            string expect = "アッガイ";
+            VerifyGetYomi("アッガイ", input, expect);
+        }
+
+        [Test]
+        public void TestGetYomi_priority_title_with_kanji()
+        {
+            string input = @"'''アッガイ''' (漢字) は、";
+            string expect = "アッガイ";
+            VerifyGetYomi("漢字", input, expect);
+        }
+
+
+        [Test]
+        public void TestGetYomi_priority_kana_defaultSort_prefered()
+        {
+            string input = @"'''わし座'''（鷲座、Aquila）は[[星座]]の一つ。[[トレミーの48星座]]のうちの一つ。
+{{DEFAULTSORT:わしさ}}";
+            string expect = "わしさ";
+            VerifyGetYomi("わし座", input, expect);
+        }
+
+        [Test]
+        public void TestGetYomi_priority_title_not_roman()
+        {
+            string input = @"議論の結果、'''削除''' に決定しました。--[[User:Tietew|Tietew]] 2006年7月24日 (月) 11:21 (UTC)";
+            string expect = "Wikipedia";
+            VerifyGetYomi("Wikipedia", input, expect);
         }
 
         #region sometime fail, but test success, why?
