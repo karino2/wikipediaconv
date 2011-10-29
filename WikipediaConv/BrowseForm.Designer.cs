@@ -30,12 +30,12 @@ namespace WikipediaConv
         {
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.MenuStrip menuStrip;
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowseForm));
             System.Windows.Forms.ToolStripContainer toolStripContainer1;
             System.Windows.Forms.StatusStrip statusStrip1;
             System.Windows.Forms.SplitContainer splitContainer1;
             System.Windows.Forms.ToolStrip toolStrip1;
             System.Windows.Forms.Timer timer;
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowseForm));
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.searchStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -48,6 +48,7 @@ namespace WikipediaConv
             this.nextButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.toEPubButton = new System.Windows.Forms.ToolStripButton();
+            this.toPdfButton = new System.Windows.Forms.ToolStripButton();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -55,7 +56,7 @@ namespace WikipediaConv
             this.rtlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toPdfButton = new System.Windows.Forms.ToolStripButton();
+            this.profileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             menuStrip = new System.Windows.Forms.MenuStrip();
             toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
             statusStrip1 = new System.Windows.Forms.StatusStrip();
@@ -225,6 +226,13 @@ namespace WikipediaConv
             this.toEPubButton.Name = "toEPubButton";
             this.toEPubButton.Click += new System.EventHandler(this.toEPubButton_Click);
             // 
+            // toPdfButton
+            // 
+            this.toPdfButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            resources.ApplyResources(this.toPdfButton, "toPdfButton");
+            this.toPdfButton.Name = "toPdfButton";
+            this.toPdfButton.Click += new System.EventHandler(this.toPdfButton_Click);
+            // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
@@ -244,7 +252,8 @@ namespace WikipediaConv
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.rtlToolStripMenuItem});
+            this.rtlToolStripMenuItem,
+            this.profileMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             resources.ApplyResources(this.optionsToolStripMenuItem, "optionsToolStripMenuItem");
             // 
@@ -272,12 +281,11 @@ namespace WikipediaConv
             timer.Enabled = true;
             timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
-            // toPdfButton
+            // profileMenuItem
             // 
-            this.toPdfButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            resources.ApplyResources(this.toPdfButton, "toPdfButton");
-            this.toPdfButton.Name = "toPdfButton";
-            this.toPdfButton.Click += new System.EventHandler(this.toPdfButton_Click);
+            this.profileMenuItem.Name = "profileMenuItem";
+            resources.ApplyResources(this.profileMenuItem, "profileMenuItem");
+            this.profileMenuItem.Click += new System.EventHandler(this.profileMenuItem_Click);
             // 
             // BrowseForm
             // 
@@ -333,6 +341,7 @@ namespace WikipediaConv
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripButton toEPubButton;
         private System.Windows.Forms.ToolStripButton toPdfButton;
+        private System.Windows.Forms.ToolStripMenuItem profileMenuItem;
 
     }
 }

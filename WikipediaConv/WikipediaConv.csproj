@@ -78,6 +78,12 @@
     <Compile Include="MimeTeX.cs" />
     <Compile Include="PageInfo.cs" />
     <Compile Include="PerfCounter.cs" />
+    <Compile Include="ProfileDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileDialog.Designer.cs">
+      <DependentUpon>ProfileDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="ProgressDialog.cs">
       <SubType>Form</SubType>
@@ -115,6 +121,9 @@
     <EmbeddedResource Include="BrowseForm.uk-UA.resx">
       <SubType>Designer</SubType>
       <DependentUpon>BrowseForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileDialog.resx">
+      <DependentUpon>ProfileDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProgressDialog.es-ES.resx">
       <DependentUpon>ProgressDialog.cs</DependentUpon>
