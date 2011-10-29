@@ -501,6 +501,7 @@ namespace WikipediaConv
 
         private void Split()
         {
+            Counter.Start("Split");
             int count = 0;
             SplitFolder.StartSplit();
             while (SplitFolder.IsRunning)
@@ -508,6 +509,7 @@ namespace WikipediaConv
                 SplitFolder.SplitOne();
                 ReportProgress(0, DecodingProgress.State.Running, "split: " + count++ + " :" + SplitFolder.Current.FullName);
             }
+            Counter.Stop("Split");
         }
 
         private void SplitIfNecessary()
@@ -515,9 +517,7 @@ namespace WikipediaConv
             if (StartSplitLimit != -1 && _currentHandledFileNum > StartSplitLimit)
             {
                 Suspend();
-                Counter.Start("Split");
                 Split();
-                Counter.Stop("Split");
                 _currentHandledFileNum = 0;
 
                 Resume();
