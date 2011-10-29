@@ -723,7 +723,7 @@ namespace WikipediaConv
             foreach (string file in files)
             {
                 bool isJapanese = IsJapanese(file);
-                Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese, di);
+                Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese, di, _counter);
                 di = di ?? gen.OutputRoot;
                 if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                 {
@@ -749,6 +749,8 @@ namespace WikipediaConv
             return Path.GetFileName(file).StartsWith("ja");
         }
 
+        PerfCounter _counter = new PerfCounter();
+
         private void toPdfButton_Click(object sender, EventArgs e)
         {
             OpenFileDialog fd = CreateIndexPickupDialog();
@@ -760,7 +762,7 @@ namespace WikipediaConv
                 {
                     bool isJapanese = IsJapanese(file);
 
-                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese, di);
+                    Dumper gen = Dumper.CreateRawDumper(file, isJapanese, di, _counter);
                     di = di ?? gen.OutputRoot;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
                     {

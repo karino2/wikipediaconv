@@ -155,14 +155,20 @@ namespace WikipediaConv
 
         public SplitFolder SplitFolder { get; set; }
 
+        public PerfCounter Counter { get; set; }
+
+        public BzipReader(string path, IDecodedAction action) : this(path, action, new PerfCounter())
+        {
+        }
         /// <summary>
         /// Initializes a new instance of the <see cref="BzipReader"/> class.
         /// </summary>
         /// <param name="path">The path to the .xml.bz2 dump of wikipedia</param>
-        public BzipReader(string path, IDecodedAction action)
+        public BzipReader(string path, IDecodedAction action, PerfCounter counter)
         {
             filePath = path;
             _action = action;
+            Counter = counter;
 
             multithreadedIndexing = (Environment.ProcessorCount > 1);
             abortDecoding = false;
@@ -187,7 +193,7 @@ namespace WikipediaConv
         /// <summary>
         /// Creates the index for the bz2 file on a separate thread.
         /// </summary>
-        private void DecodeAsync()
+        internal void DecodeAsync()
         {
             bool failed = false;
             startTime = DateTime.Now;
@@ -198,7 +204,9 @@ namespace WikipediaConv
 
                 // Locate the bzip2 blocks in the file
 
+                Counter.Start("LocateBlock");
                 LocateBlocks();
+                Counter.Stop("LocateBlock");
 
                 // Two times more than the first block but not less than 100 bytes
 
@@ -230,6 +238,7 @@ namespace WikipediaConv
 
                     #region Load-Decode-HandleDecodedData
 
+                    Counter.Start("LoadBlock");
                     loadedLength = LoadBlock(beginnings[i], ends[i], ref blockBuf);
 
                     if (charBuf.Length < blockBuf.Length)
@@ -263,6 +272,7 @@ namespace WikipediaConv
 
                     int carryOverLength = charCarryOver.Length;
 
+                    Counter.Stop("LoadBlock");
                     int charsMatched = HandleDecodedData(sb.ToString(), beginnings[i], ends[i], carryOverLength, i == totalBlocks - 1);
 
                     // There's a Wiki topic carryover, let's store the characters which need to be carried over 
@@ -314,6 +324,7 @@ namespace WikipediaConv
         /// <returns>The number of characters in the end of the string that match the header entry</returns>
         public int HandleDecodedData(string currentText, long beginning, long end, int charCarryOver, bool lastBlock)
         {
+            Counter.Start("Other");
             bool firstRun = true;
 
             int topicStart = currentText.IndexOf("<title>", StringComparison.InvariantCultureIgnoreCase);
@@ -323,6 +334,7 @@ namespace WikipediaConv
             string title = String.Empty;
             long id = -1;
 
+            Counter.Stop("Other");
             while (topicStart >= 0 &&
                 !abortDecoding)
             {
@@ -397,11 +409,15 @@ namespace WikipediaConv
                 begins[0] = beginning;
                 ends[0] = end;
 
+
+
                 PageInfo pi = new PageInfo(id, title, begins, ends);
                 if (EnableYomi)
                 {
+                    Counter.Start("GetYomi");
                     pi.Decoder = this;
                     pi.Yomi = GetYomi(pi.Name, pi.GetRawContent());
+                    Counter.Stop("GetYomi");
                 }
 
                 Interlocked.Increment(ref activeThreads);
@@ -499,7 +515,9 @@ namespace WikipediaConv
             if (StartSplitLimit != -1 && _currentHandledFileNum > StartSplitLimit)
             {
                 Suspend();
+                Counter.Start("Split");
                 Split();
+                Counter.Stop("Split");
                 _currentHandledFileNum = 0;
 
                 Resume();
@@ -682,12 +700,14 @@ namespace WikipediaConv
         /// <param name="state">PageInfo object</param>
         private void HandleOnePage(object state)
         {
+            Counter.Start("Action");
             PageInfo pi = (PageInfo)state;
             bool handled = _action.Action(pi);
             Interlocked.Decrement(ref activeThreads);
 
             if(handled)
                 _currentHandledFileNum++;
+            Counter.Stop("Action");
         }
 
         private void FlashAction()
