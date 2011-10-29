@@ -757,6 +757,7 @@ namespace WikipediaConv
 
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
+                _counter.Start("All");
                 DirectoryInfo di = null;
                 foreach (string file in fd.FileNames)
                 {
@@ -774,6 +775,7 @@ namespace WikipediaConv
 
                 if (di != null)
                 {
+                    _counter.Start("Archive");
                     var archiver = new PdfArchiver();
                     GenerateEpubTask epub = new GenerateEpubTask(di, archiver.Archive, ".pdf");
                     epub.SourceExtension = ".wiki";
@@ -782,8 +784,16 @@ namespace WikipediaConv
                         MessageBox.Show("generate epub cancelled");
                         return;
                     }
+                    _counter.Stop("Archive");
                 }
+                _counter.Stop("All");
             }
+        }
+
+        private void profileMenuItem_Click(object sender, EventArgs e)
+        {
+            var pd = new ProfileDialog(_counter);
+            pd.Show(this);
         }
     }
 }
