@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="HtmlGeneraterActionTest.cs" />
     <Compile Include="ForestWalkerTest.cs" />
+    <Compile Include="PerfCounterTest.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SplitFolderTest.cs" />
