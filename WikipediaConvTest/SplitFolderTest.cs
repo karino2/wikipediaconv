@@ -855,7 +855,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
 
         // below here is not test, some experiment.
         // [Test]
-        public void RunSplitFolder()
+        public void RunSomething()
         {
             /*
             EPubArchiver archiver = new EPubArchiver();
@@ -866,10 +866,29 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             SplitFolder spliter = new SplitFolder(new DirectoryInfo(@"../../../../ePub2"));
             spliter.Split();
              * */
+            /*
             var di = new DirectoryInfo(@"../../../../pdf");
             SplitFolder spliter = new SplitFolder(di, di, new JapaneseTactics());
             spliter.Extension = ".wiki";
             spliter.Split();
+             * */
+            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
+            {
+                const int size = 1024 * 1024;
+                byte[] buf = new byte[size];
+                using (var headWriter = new FileStream(@"../../../../jahead.xml", FileMode.CreateNew))
+                {
+                    var res = reader.Read(buf, 0, size);
+                    headWriter.Write(buf, 0, res);
+                }
+
+                using (var tailWriter = new FileStream(@"../../../../jatail.xml", FileMode.CreateNew))
+                {
+                    reader.Seek(-size, SeekOrigin.End);
+                    var res = reader.Read(buf, 0, size);
+                    tailWriter.Write(buf, 0, res);
+                }
+            }
         }
 
 

@@ -23,8 +23,8 @@ namespace WikipediaConvTest
             pc.Stop("testPC2");
             pc.Stop("testPC");
 
-            Assert.AreEqual(0.3, pc.GetStopWatch("testPC").Average, 0.05);
-            Assert.AreEqual(0.1, pc.GetStopWatch("testPC2").Average, 0.05);
+            Assert.AreEqual(0.0003, pc.GetStopWatch("testPC").Average, 0.00005);
+            Assert.AreEqual(0.0001, pc.GetStopWatch("testPC2").Average, 0.00005);
 
         }
     }
@@ -84,30 +84,30 @@ namespace WikipediaConvTest
         [Test]
         public void Test_StartEnd_One()
         {
-            TimeSpan elapse = new TimeSpan(1000);
-            DateTime beg = new DateTime(1000);
-            DateTime end = new DateTime(2000);
+            TimeSpan elapse = new TimeSpan(10000);
+            DateTime beg = new DateTime(10000);
+            DateTime end = new DateTime(20000);
             var sw = Create(beg, end);
             sw.Start();
             sw.Stop();
             Assert.AreEqual(elapse, sw.Max);
             Assert.AreEqual(elapse, sw.Min);
             Assert.AreEqual(1, sw.Count);
-            Assert.AreEqual(0.1, sw.Average);
+            Assert.AreEqual(1/1000.0, sw.Average);
 
         }
 
         [Test]
         public void Test_StartEnd_Two()
         {
-            TimeSpan elapse1 = new TimeSpan(1000);
-            TimeSpan elapse2 = new TimeSpan(2000);
+            TimeSpan elapse1 = new TimeSpan(10000);
+            TimeSpan elapse2 = new TimeSpan(20000);
 
-            DateTime beg1 = new DateTime(1000);
-            DateTime end1 = new DateTime(2000);
+            DateTime beg1 = new DateTime(10000);
+            DateTime end1 = new DateTime(20000);
 
-            DateTime beg2 = new DateTime(3000);
-            DateTime end2 = new DateTime(5000);
+            DateTime beg2 = new DateTime(30000);
+            DateTime end2 = new DateTime(50000);
 
             var sw = Create(beg1, end1, beg2, end2);
             sw.Start();
@@ -117,7 +117,7 @@ namespace WikipediaConvTest
             Assert.AreEqual(elapse2, sw.Max);
             Assert.AreEqual(elapse1, sw.Min);
             Assert.AreEqual(2, sw.Count);
-            Assert.AreEqual(0.15, sw.Average);
+            Assert.AreEqual(1.5/1000.0, sw.Average);
 
         }
     }

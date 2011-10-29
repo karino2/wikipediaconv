@@ -15,6 +15,10 @@ namespace WikipediaConv
                 _stopWatches[name] = new StopWatch(name) { Now = Now };
             return _stopWatches[name];
         }
+        public double GetTotalSeconds(string name)
+        {
+            return GetStopWatch(name).Total.TotalMilliseconds / 1000.0;
+        }
         public void Start(string name)
         {
             GetStopWatch(name).Start();
@@ -39,11 +43,12 @@ namespace WikipediaConv
         public int Count { get; set; }
         public TimeSpan Total { get; set; }
 
+        // seconds
         public double Average
         {
             get
             {
-                return Total.TotalMilliseconds / (double)Count;
+                return Total.TotalMilliseconds / (double)(Count*1000);
             }
         }
         // DateTime.Now, for test purpose.
