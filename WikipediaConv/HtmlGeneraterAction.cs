@@ -78,7 +78,7 @@ namespace WikipediaConv
                 string path = GetHtmlName(pi, di);
                 _path = path; // for debug.
                 // ignore redirect.
-                if (!IsSkipCandidate(path, formattedContent))
+                if (!IsSkipCandidate(pi.Name, formattedContent))
                 {
                     using (StreamWriter sw = new StreamWriter(path))
                     {
@@ -110,6 +110,8 @@ namespace WikipediaConv
                 return true;
             if (IsCategory(wikiName))
                 return true;
+            if (IsFileDescription(wikiName))
+                return true;
             return false;
         }
 
@@ -126,6 +128,11 @@ namespace WikipediaConv
         internal static bool IsSakujoIrai(string wikiName)
         {
             return wikiName.StartsWith("Wikipedia:削除依頼");
+        }
+
+        internal static bool IsFileDescription(string wikiName)
+        {
+            return wikiName.StartsWith("ファイル:");
         }
 
         static internal bool IsRedirect(string formattedContent)
@@ -147,7 +154,7 @@ namespace WikipediaConv
                 string path = Path.Combine(di.FullName, fname);
                 return path;
             }
-            catch (System.NotSupportedException ex)
+            catch (System.Exception ex)
             {
                 Debug.WriteLine("combine: ");
                 Debug.WriteLine("dir=" + di.FullName);
