@@ -576,7 +576,7 @@ namespace WikipediaConv
                 if (pos == -1)
                     continue;
                 int endPos = line.IndexOf("}}", pos);
-                if (pos + begStr.Length == endPos)
+                if (endPos == -1 || (pos + begStr.Length == endPos))
                     continue;
                 defaultSort = line.Substring(pos + begStr.Length, endPos - (pos + begStr.Length));
                 defaultSort = Sanitize(defaultSort);
