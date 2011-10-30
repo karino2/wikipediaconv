@@ -12,6 +12,11 @@ namespace WikipediaConvTest
     [TestFixture]
     public class BenchMark
     {
+        public BenchMark()
+        {
+            EnableReport = true;
+        }
+        public bool EnableReport { get; set; }
         // this is not test, but use nunit!
         // [Test]
         public void DoBenchmark()
@@ -34,10 +39,13 @@ namespace WikipediaConvTest
             dumper._bzipReader.DecodeAsync();
 
             counter.Stop("AllBench");
-            Report(benchDir, counter);
+            if(EnableReport)
+                Report(benchDir, counter);
 
             Console.WriteLine(counter.ToString());
         }
+
+
 
         private void Report(string benchDir, PerfCounter counter)
         {
@@ -100,11 +108,10 @@ namespace WikipediaConvTest
                         Array.ForEach(children, (d) => d.Delete());
                     }
                 }
-                outputDir.Delete();
             }
-            // outputDir.Create();
-            var dirDup = new DirectoryInfo(outputDir.FullName);
-            dirDup.Create();
+            else{
+                outputDir.Create();
+            }
        }
     }
 }

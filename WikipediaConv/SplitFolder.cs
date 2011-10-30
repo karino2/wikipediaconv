@@ -240,9 +240,8 @@ namespace WikipediaConv
             bool needToWalkDown = false;
             if (TooMuchFile || AlreadySplited)
             {
-                CreateSubdirectories();
+                // CreateSubdirectories();
                 needToWalkDown = SortToSubdirectories();
-                RemoveUnusedDirectories();
             }
             if (!needToWalkDown)
             {
@@ -285,17 +284,10 @@ namespace WikipediaConv
             return true;
         }
 
-        private void RemoveUnusedDirectories()
+        internal virtual void MoveTo(FileInfo target, string dest)
         {
-            foreach (var dir in Current.GetDirectories())
-            {
-                if (IsEmpty(dir))
-                    dir.Delete();
-            }
-        }
-
-        internal virtual void MoveTo(FileInfo target, string destPath)
-        {
+            var destPath = Path.Combine(dest, target.Name);
+            EnsureDirectory(dest);
             for (int i = 0; i < 10; i++)
             {
                 try
@@ -323,7 +315,7 @@ namespace WikipediaConv
                 if (dest != Current.FullName)
                 {
                     moveSomething = true;
-                    MoveTo(file, Path.Combine(dest, file.Name));
+                    MoveTo(file, dest);
                 }
             }
             return moveSomething;
@@ -374,36 +366,14 @@ namespace WikipediaConv
             return fname.ToLowerInvariant().Replace(" ", "");
         }
 
-        void CreateSubdirectories()
+
+        void EnsureDirectory(string path)
         {
-            foreach (char c in _tactics.Alphabets)
-            {
-                EnsureSubdirectory(c);
-            }
+            var di = new DirectoryInfo(path);
+            if (!di.Exists)
+                di.Create();
         }
 
-        void EnsureSubdirectory(char c)
-        {
-            /* // this code is very slow.
-            var dis = Current.GetDirectories(c.ToString());
-            if (dis.Length == 0)
-             * */
-            var di = GetDirectoryInfo(c);
-            if (!di.Exists) 
-                CreateSubdirectory(c);
-        }
-
-        private DirectoryInfo GetDirectoryInfo(char c)
-        {
-            return new DirectoryInfo(Path.Combine(Current.FullName, c.ToString()));
-        }
-
-        internal virtual void CreateSubdirectory(char c)
-        {
-            var di = GetDirectoryInfo(c);
-            di.Create();
-            // Current.CreateSubdirectory(c.ToString());
-        }
 
 
         public int MaxFileNum { get; set; }
