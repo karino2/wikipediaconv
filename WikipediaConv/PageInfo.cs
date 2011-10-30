@@ -170,42 +170,63 @@ namespace WikipediaConv
             return tmp;
         }
 
+
+        static int IndexOf(string target, string searchfor, int pos)
+        {
+            return target.IndexOf(searchfor, pos, StringComparison.InvariantCultureIgnoreCase);
+            // a little faster, but I don't know the risk.
+            // return target.IndexOf(searchfor, pos);
+        }
+
         private string GetTextNodeInnerText(string raw)
         {
             string searchfor = String.Format("<id>{0}</id>", TopicId);
 
-            int pos = raw.IndexOf(searchfor, StringComparison.InvariantCultureIgnoreCase);
+
+            int pos = IndexOf(raw, searchfor, 0);
 
             if (pos < 0)
             {
                 throw new Exception(String.Format(Properties.Resources.NoTopicInBlock, Name));
             }
 
-            int textStart = raw.IndexOf("<text", pos, StringComparison.InvariantCultureIgnoreCase);
+            int textStart = IndexOf(raw, "<text", pos);
 
             if (textStart < 0)
             {
                 throw new Exception(String.Format(Properties.Resources.NoTextMarkerInBlock, Name));
             }
 
-            int extractionStart = raw.IndexOf(">", textStart, StringComparison.InvariantCultureIgnoreCase);
+            int extractionStart = IndexOf(raw, ">", textStart);
 
             if (extractionStart < 0)
             {
                 throw new Exception(String.Format(Properties.Resources.NoTextStartInBlock, Name));
             }
 
-            int extractionEnd = raw.IndexOf("</text>", extractionStart, StringComparison.InvariantCultureIgnoreCase);
+            int extractionEnd = IndexOf(raw, "</text>", extractionStart);
 
             if (extractionEnd < 0)
             {
                 throw new Exception(String.Format(Properties.Resources.NoTextEndInBlock, Name));
             }
 
-            string toFormat = raw.Substring(extractionStart + 1, extractionEnd - extractionStart - 1);
+            string toFormat = Substring(raw, extractionStart, extractionEnd);
 
+            return HtmlDecode(toFormat);
+        }
+
+        private static string HtmlDecode(string toFormat)
+        {
             return HttpUtility.HtmlDecode(toFormat);
         }
+
+        private static string Substring(string raw, int extractionStart, int extractionEnd)
+        {
+            string toFormat = raw.Substring(extractionStart + 1, extractionEnd - extractionStart - 1);
+            return toFormat;
+        }
+
 
         public override string ToString()
         {
