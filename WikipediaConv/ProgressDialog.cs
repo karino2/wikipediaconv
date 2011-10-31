@@ -25,8 +25,11 @@ namespace WikipediaConv
         /// </summary>
         private bool indexingRunning;
 
-        public ProgressDialog(ILongTask indexer)
+        PerfCounter _counter;
+
+        public ProgressDialog(ILongTask indexer, PerfCounter counter)
         {
+            _counter = counter;
             InitializeComponent();
 
             ltask = indexer;
@@ -103,5 +106,15 @@ namespace WikipediaConv
         }
 
         #endregion
+
+        private void clearButton_Click(object sender, EventArgs e)
+        {
+            textBox.Clear();
+        }
+
+        private void profileButton_Click(object sender, EventArgs e)
+        {
+            textBox.AppendText(_counter.ToString());
+        }
     }
 }

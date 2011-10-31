@@ -33,6 +33,8 @@ namespace WikipediaConv
             this.textBox = new System.Windows.Forms.TextBox();
             this.btnDone = new System.Windows.Forms.Button();
             this.labelETA = new System.Windows.Forms.Label();
+            this.profileButton = new System.Windows.Forms.Button();
+            this.clearButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // progressBar
@@ -59,11 +61,27 @@ namespace WikipediaConv
             resources.ApplyResources(this.labelETA, "labelETA");
             this.labelETA.Name = "labelETA";
             // 
+            // profileButton
+            // 
+            resources.ApplyResources(this.profileButton, "profileButton");
+            this.profileButton.Name = "profileButton";
+            this.profileButton.UseVisualStyleBackColor = true;
+            this.profileButton.Click += new System.EventHandler(this.profileButton_Click);
+            // 
+            // clearButton
+            // 
+            resources.ApplyResources(this.clearButton, "clearButton");
+            this.clearButton.Name = "clearButton";
+            this.clearButton.UseVisualStyleBackColor = true;
+            this.clearButton.Click += new System.EventHandler(this.clearButton_Click);
+            // 
             // ProgressDialog
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ControlBox = false;
+            this.Controls.Add(this.clearButton);
+            this.Controls.Add(this.profileButton);
             this.Controls.Add(this.labelETA);
             this.Controls.Add(this.btnDone);
             this.Controls.Add(this.textBox);
@@ -85,5 +103,7 @@ namespace WikipediaConv
         private System.Windows.Forms.TextBox textBox;
         private System.Windows.Forms.Button btnDone;
         private System.Windows.Forms.Label labelETA;
+        private System.Windows.Forms.Button profileButton;
+        private System.Windows.Forms.Button clearButton;
     }
 }
