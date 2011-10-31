@@ -18,6 +18,40 @@ namespace WikipediaConvTest
         }
         public bool EnableReport { get; set; }
 
+        // [Test]
+        public void DoSomething()
+        {
+            /*
+            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
+            {
+                const int size = 1024 * 1024;
+                byte[] buf = new byte[size];
+                using (var headWriter = new FileStream(@"../../../../jahead.xml", FileMode.CreateNew))
+                {
+                    var res = reader.Read(buf, 0, size);
+                    headWriter.Write(buf, 0, res);
+                }
+
+                using (var tailWriter = new FileStream(@"../../../../jatail.xml", FileMode.CreateNew))
+                {
+                    reader.Seek(-size, SeekOrigin.End);
+                    var res = reader.Read(buf, 0, size);
+                    tailWriter.Write(buf, 0, res);
+                }
+            }
+             * */
+            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
+            {
+                const int size = 1024 * 1024*10;
+                byte[] buf = new byte[size];
+                using (var headWriter = new FileStream(@"../../../../jahead_10M.xml", FileMode.CreateNew))
+                {
+                    var res = reader.Read(buf, 0, size);
+                    headWriter.Write(buf, 0, res);
+                }
+            }
+        }
+
         [Test]
         public void TestIndexOf()
         {
@@ -35,6 +69,7 @@ namespace WikipediaConvTest
             var outputDir = new DirectoryInfo(solutionDir + "test_tmp_result");
             CleanUp(outputDir);
             var bzipPath = benchDir + "jahead.xml.bz2";
+            // var bzipPath = benchDir + "jahead_10M.xml.bz2";
             PerfCounter counter = new PerfCounter();
             counter.Start("AllBench");
             var dumper = Dumper.CreateRawDumper(bzipPath, true, outputDir, counter);
@@ -81,6 +116,7 @@ namespace WikipediaConvTest
                     bldr.AppendFormat(" {0:0.00}", counter.GetTotalSeconds("GetYomi"));
                     bldr.Append(",");
                     bldr.AppendFormat(" {0:0.00}", counter.GetTotalSeconds("Other"));
+                    bldr.Append(", "); // for comment field.
                     output.WriteLine(bldr.ToString());                        
                 }
             }

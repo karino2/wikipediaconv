@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define DIRTY
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -174,6 +176,10 @@ namespace WikipediaConv
         }
 
         public DirectoryInfo StartDirectory { get; set; }
+
+        public Dictionary<string, bool> _dirty;
+
+
         public SplitFolder(DirectoryInfo baseDi, DirectoryInfo current, ISplitTactics tactics)
         {
             Abort = false;
@@ -183,6 +189,7 @@ namespace WikipediaConv
             StartDirectory = current;
             MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
             Extension = ".html";
+            _dirty = new Dictionary<string, bool>();
         }
 
 
@@ -219,6 +226,13 @@ namespace WikipediaConv
             Current = StartDirectory;
             ForestNode<DirectoryInfo> root = DirectoryForest(StartDirectory);
             _walker = root.Walker;
+            _dirty.Clear();
+            SetDirty(StartDirectory.FullName);
+        }
+
+        void SetDirty(string fullName)
+        {
+            _dirty[NormalizedFullName(fullName)] = true;
         }
 
         public bool IsRunning
@@ -236,11 +250,17 @@ namespace WikipediaConv
             var node = _walker.Current;
             if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
                 return; // continue;
+#if DIRTY
+            if(!IsDirty(node.Element.FullName))
+            {
+                _walker.SkipChildren();
+                return; // continue;
+            }
+#endif
             Current = node.Element;
             bool needToWalkDown = false;
-            if (TooMuchFile || AlreadySplited)
+            if (AlreadySplited || TooMuchFile)
             {
-                // CreateSubdirectories();
                 needToWalkDown = SortToSubdirectories();
             }
             if (!needToWalkDown)
@@ -248,6 +268,11 @@ namespace WikipediaConv
                 _walker.SkipChildren();
             }
 
+        }
+
+        private bool IsDirty(string fullName)
+        {
+            return _dirty.ContainsKey(NormalizedFullName(fullName));
         }
 
         public void Split()
@@ -267,8 +292,18 @@ namespace WikipediaConv
                 (x) => x.Parent,
                 (x) => x.GetDirectories().Length,
                 ChildIndex,
-                (x, y) => x.FullName.TrimEnd(new char[]{'\\', '/'}) == y.FullName.TrimEnd(new char[]{'\\', '/'}));
+                (x, y) => PathEqual(x, y));
             return root;
+        }
+
+        public static bool PathEqual(DirectoryInfo x, DirectoryInfo y)
+        {
+            return NormalizedFullName(x.FullName) == NormalizedFullName(y.FullName);
+        }
+
+        private static string NormalizedFullName(string fullName)
+        {
+            return fullName.TrimEnd(new char[] { '\\', '/' });
         }
 
         bool IsEmpty(DirectoryInfo di)
@@ -288,6 +323,9 @@ namespace WikipediaConv
         {
             var destPath = Path.Combine(dest, target.Name);
             EnsureDirectory(dest);
+#if DIRTY
+            SetDirty(dest);
+#endif
             for (int i = 0; i < 10; i++)
             {
                 try
