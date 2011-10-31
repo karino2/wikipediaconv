@@ -488,7 +488,7 @@ namespace WikipediaConv
 
             if (!ixr.IndexExists)
             {
-                if (new ProgressDialog(ixr.LongTask).ShowDialog(this) != DialogResult.OK)
+                if (new ProgressDialog(ixr.LongTask, _counter).ShowDialog(this) != DialogResult.OK)
                 {
                     return;
                 }
@@ -725,7 +725,7 @@ namespace WikipediaConv
                 bool isJapanese = IsJapanese(file);
                 Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese, di, _counter);
                 di = di ?? gen.OutputRoot;
-                if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
+                if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
                 {
                     MessageBox.Show("generate html cancelled");
                     // tmp fall through. 
@@ -736,7 +736,7 @@ namespace WikipediaConv
             if (di != null)
             {
                 GenerateEpubTask epub = new GenerateEpubTask(di, archive, extension);
-                if (DialogResult.OK != new ProgressDialog(epub).ShowDialog(this))
+                if (DialogResult.OK != new ProgressDialog(epub, _counter).ShowDialog(this))
                 {
                     MessageBox.Show("generate epub cancelled");
                     return;
@@ -765,7 +765,7 @@ namespace WikipediaConv
 
                     Dumper gen = Dumper.CreateRawDumper(file, isJapanese, di, _counter);
                     di = di ?? gen.OutputRoot;
-                    if (DialogResult.OK != new ProgressDialog(gen.LongTask).ShowDialog(this))
+                    if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
                     {
                         MessageBox.Show("generate html cancelled");
                         // tmp fall through. 
@@ -779,7 +779,7 @@ namespace WikipediaConv
                     var archiver = new PdfArchiver();
                     GenerateEpubTask epub = new GenerateEpubTask(di, archiver.Archive, ".pdf");
                     epub.SourceExtension = ".wiki";
-                    if (DialogResult.OK != new ProgressDialog(epub).ShowDialog(this))
+                    if (DialogResult.OK != new ProgressDialog(epub, _counter).ShowDialog(this))
                     {
                         MessageBox.Show("generate epub cancelled");
                         return;
