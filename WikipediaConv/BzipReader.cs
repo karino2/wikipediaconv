@@ -376,6 +376,7 @@ namespace WikipediaConv
                 }
 
 
+
                 // Start creating the object for the tokenizing ThreadPool thread
 
                 long[] begins = new long[1];
@@ -409,14 +410,12 @@ namespace WikipediaConv
                 begins[0] = beginning;
                 ends[0] = end;
 
-
-
                 PageInfo pi = new PageInfo(id, title, begins, ends);
                 if (EnableYomi)
                 {
                     Counter.Start("GetYomi");
                     pi.Decoder = this;
-                    pi.Yomi = GetYomi(pi.Name, pi.GetRawContent());
+                    pi.Yomi = GetYomi(pi.Name, pi.GetRawContent(currentText.Substring(idEnd, topicEnd - idEnd + "</text>".Length)));
                     Counter.Stop("GetYomi");
                 }
 

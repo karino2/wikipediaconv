@@ -153,6 +153,20 @@ namespace WikipediaConv
 
         string rawContent = null;
 
+        public string GetRawContent(string contains)
+        {
+            if (!String.IsNullOrEmpty(rawContent))
+                return rawContent;
+            /*
+            var rawContentCand = GetTextNodeInnerTextFromIdPos(contains, 0);
+            var tmp = GetRawContent();
+            Debug.Assert(rawContentCand == tmp);
+            rawContent = rawContentCand;
+             * */
+            rawContent = GetTextNodeInnerTextFromIdPos(contains, 0);
+            return rawContent;
+        }
+
         public string GetRawContent()
         {
             if (!String.IsNullOrEmpty(rawContent))
@@ -180,17 +194,18 @@ namespace WikipediaConv
 
         private string GetTextNodeInnerText(string raw)
         {
-            string searchfor = String.Format("<id>{0}</id>", TopicId);
-
-
-            int pos = IndexOf(raw, searchfor, 0);
-
+            int pos = IndexOfId(raw);
             if (pos < 0)
             {
                 throw new Exception(String.Format(Properties.Resources.NoTopicInBlock, Name));
             }
 
-            int textStart = IndexOf(raw, "<text", pos);
+            return GetTextNodeInnerTextFromIdPos(raw, pos);
+        }
+
+        private string GetTextNodeInnerTextFromIdPos(string raw, int idPos)
+        {
+            int textStart = IndexOf(raw, "<text", idPos);
 
             if (textStart < 0)
             {
@@ -214,6 +229,28 @@ namespace WikipediaConv
             string toFormat = Substring(raw, extractionStart, extractionEnd);
 
             return HtmlDecode(toFormat);
+        }
+
+        static int _hint = 0;
+
+        private int IndexOfId(string raw)
+        {
+            string searchfor = String.Format("<id>{0}</id>", TopicId);
+
+            if (_hint > raw.Length)
+                _hint = 0;
+            int pos = IndexOf(raw, searchfor, _hint);
+            if (pos != -1)
+            {
+                _hint = pos;
+                return pos;
+            }
+
+            pos = raw.IndexOf(searchfor, 0, Math.Min(raw.Length, _hint + searchfor.Length));
+            if (pos != -1)
+                _hint = pos;
+
+            return pos;
         }
 
         private static string HtmlDecode(string toFormat)

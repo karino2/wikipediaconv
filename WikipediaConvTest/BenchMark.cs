@@ -17,8 +17,17 @@ namespace WikipediaConvTest
             EnableReport = true;
         }
         public bool EnableReport { get; set; }
+
+        [Test]
+        public void TestIndexOf()
+        {
+            var target = "abcdefgdd";
+            var actual = target.IndexOf("def", 3, 3);
+            Assert.AreEqual(3, actual);
+        }
+
         // this is not test, but use nunit!
-        // [Test]
+        [Test]
         public void DoBenchmark()
         {
             var solutionDir = @"../../../";
