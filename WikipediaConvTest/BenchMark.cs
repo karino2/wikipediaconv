@@ -1,4 +1,6 @@
-﻿using System;
+﻿// #define BIGDATA
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -68,8 +70,11 @@ namespace WikipediaConvTest
             var benchDir = solutionDir + "bench/";
             var outputDir = new DirectoryInfo(solutionDir + "test_tmp_result");
             CleanUp(outputDir);
+#if BIGDATA
+            var bzipPath = benchDir + "jahead_10M.xml.bz2";
+#else
             var bzipPath = benchDir + "jahead.xml.bz2";
-            // var bzipPath = benchDir + "jahead_10M.xml.bz2";
+#endif
             PerfCounter counter = new PerfCounter();
             counter.Start("AllBench");
             var dumper = Dumper.CreateRawDumper(bzipPath, true, outputDir, counter);
@@ -136,20 +141,20 @@ namespace WikipediaConvTest
         {
             if (outputDir.Exists)
             {
-                var walker = SplitFolder.DirectoryForest(outputDir).Walker;
+                var walker = DirectoryInfoCache.Forest(outputDir).Walker;
                 while (walker.HasNext)
                 {
                     walker.MoveNext();
                     var cur = walker.Current;
                     var dir = cur.Element;
-                    if (cur.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Leading)
+                    if (cur.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Leading)
                     {
-                        var files = dir.GetFiles();
+                        var files = dir.Item.GetFiles();
                         Array.ForEach(files, (f) => f.Delete());
                     }
-                    if (cur.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
+                    if (cur.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
                     {
-                        var children = dir.GetDirectories();
+                        var children = dir.Item.GetDirectories();
                         Array.ForEach(children, (d) => d.Delete());
                     }
                 }

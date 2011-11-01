@@ -147,46 +147,138 @@ namespace WikipediaConv
         }
     }
 
+
+    public class DirectoryInfoCache
+    {
+        public DirectoryInfoCache Parent;
+        public DirectoryInfo Item;
+        private DirectoryInfo[] _children = null;
+        public DirectoryInfoCache(DirectoryInfoCache parent, DirectoryInfo item)
+        {
+            Parent = parent;
+            Item = item;
+        }
+
+        public int ChildrenLength
+        {
+            get { return DirectoryInfoChildren.Length; }
+        }
+
+        public DirectoryInfoCache GetChild(int i)
+        {
+            return new DirectoryInfoCache(this, DirectoryInfoChildren[i]);
+        }
+
+        public int ChildIndex
+        {
+            get
+            {
+                for (int i = 0; i < Parent.ChildrenLength; i++)
+                {
+                    if (Parent.GetChild(i).Item.FullName == Item.FullName)
+                        return i;
+                }
+                return -1;
+            }
+        }
+
+        private DirectoryInfo[] DirectoryInfoChildren
+        {
+            get
+            {
+                if (_children == null)
+                    _children = Item.GetDirectories();
+                return _children;
+            }
+        }
+        public static ForestNode<DirectoryInfoCache> Forest(DirectoryInfo cur)
+        {
+            var dic = new DirectoryInfoCache(null, cur);
+            return Forest(dic);
+        }
+
+        public static ForestNode<DirectoryInfoCache> Forest(DirectoryInfoCache dic)
+        {
+            ForestNode<DirectoryInfoCache> root = new ForestNode<DirectoryInfoCache>(ForestNode<DirectoryInfoCache>.Edge.Leading,
+                dic,
+                (x, i) => x.GetChild(i),
+                (x) => x.Parent,
+                (x) => x.ChildrenLength,
+                (x) => x.ChildIndex,
+                (x, y) => PathEqual(x.Item, y.Item));
+            return root;
+        }
+        public static bool PathEqual(DirectoryInfo x, DirectoryInfo y)
+        {
+            return NormalizedFullName(x.FullName) == NormalizedFullName(y.FullName);
+        }
+
+        private static string NormalizedFullName(string fullName)
+        {
+            return fullName.TrimEnd(new char[] { '\\', '/' });
+        }
+
+
+        public override int GetHashCode()
+        {
+            return NormalizedFullName(Item.FullName).GetHashCode();
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other == null)
+                return ((object)this) == null;
+            if (other is DirectoryInfoCache)
+            {
+                DirectoryInfoCache dic = other as DirectoryInfoCache;
+                return PathEqual(Item, dic.Item);
+            }
+            return false;
+        }
+
+        public static bool operator ==(DirectoryInfoCache a, DirectoryInfoCache b)
+        {
+            return a.Equals(b);
+        }
+        public static bool operator !=(DirectoryInfoCache a, DirectoryInfoCache b)
+        {
+            return !a.Equals(b);
+        }
+    }
+
     public class SplitFolder
     {
         public virtual IEnumerable<FileInfo> FileEnum
         {
             get
             {
-                return Current.EnumerateFiles();
+                return Current.Item.EnumerateFiles();
             }
         }
-        DirectoryInfo Base { get; set; }
-        internal DirectoryInfo Current { get; set; }
+        DirectoryInfoCache Base { get; set; }
+        internal DirectoryInfoCache Current { get; set; }
 
         public string Extension { get; set; }
 
         ISplitTactics _tactics;
 
-        public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics)
-            : this(baseDi, baseDi, tactics)
-        { }
 
         public SplitFolder(DirectoryInfo baseDi)
-            : this(baseDi, baseDi)
+            : this(baseDi, new EnglishTactics())
         { }
 
-        public SplitFolder(DirectoryInfo baseDi, DirectoryInfo current) : this(baseDi, current, new EnglishTactics())
-        {
-        }
 
-        public DirectoryInfo StartDirectory { get; set; }
+        public DirectoryInfoCache StartDirectory { get; set; }
 
         public Dictionary<string, bool> _dirty;
 
-
-        public SplitFolder(DirectoryInfo baseDi, DirectoryInfo current, ISplitTactics tactics)
+        public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics)
         {
             Abort = false;
             _tactics = tactics;
-            Base = new DirectoryInfo(baseDi.FullName.TrimEnd('\\'));
-            Current = current;
-            StartDirectory = current;
+            Base = new DirectoryInfoCache(null, baseDi);
+            Current = Base;
+            StartDirectory = Current;
             MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
             Extension = ".html";
             _dirty = new Dictionary<string, bool>();
@@ -218,16 +310,16 @@ namespace WikipediaConv
 
         public bool Abort { get; set; }
 
-        ForestWalker<DirectoryInfo> _walker;
+        ForestWalker<DirectoryInfoCache> _walker;
 
         public void StartSplit()
         {
             Abort = false;
             Current = StartDirectory;
-            ForestNode<DirectoryInfo> root = DirectoryForest(StartDirectory);
+            ForestNode<DirectoryInfoCache> root = DirectoryInfoCache.Forest(StartDirectory);
             _walker = root.Walker;
             _dirty.Clear();
-            SetDirty(StartDirectory.FullName);
+            SetDirty(StartDirectory.Item.FullName);
         }
 
         void SetDirty(string fullName)
@@ -248,10 +340,10 @@ namespace WikipediaConv
         {
             _walker.MoveNext();
             var node = _walker.Current;
-            if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
+            if (node.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
                 return; // continue;
 #if DIRTY
-            if(!IsDirty(node.Element.FullName))
+            if(!IsDirty(node.Element.Item.FullName))
             {
                 _walker.SkipChildren();
                 return; // continue;
@@ -282,23 +374,6 @@ namespace WikipediaConv
             {
                 SplitOne();
             }
-        }
-
-        public static ForestNode<DirectoryInfo> DirectoryForest(DirectoryInfo cur)
-        {
-            ForestNode<DirectoryInfo> root = new ForestNode<DirectoryInfo>(ForestNode<DirectoryInfo>.Edge.Leading,
-                cur,
-                (x, i) => x.GetDirectories()[i],
-                (x) => x.Parent,
-                (x) => x.GetDirectories().Length,
-                ChildIndex,
-                (x, y) => PathEqual(x, y));
-            return root;
-        }
-
-        public static bool PathEqual(DirectoryInfo x, DirectoryInfo y)
-        {
-            return NormalizedFullName(x.FullName) == NormalizedFullName(y.FullName);
         }
 
         private static string NormalizedFullName(string fullName)
@@ -350,7 +425,7 @@ namespace WikipediaConv
             foreach (var file in FileEnum)
             {
                 string dest = GetMatchedSubdirectoryPath(file);
-                if (dest != Current.FullName)
+                if (dest != Current.Item.FullName)
                 {
                     moveSomething = true;
                     MoveTo(file, dest);
@@ -366,11 +441,11 @@ namespace WikipediaConv
                 if(Base == Current)
                     return "";
                 List<String> dirs = new List<String>();
-                DirectoryInfo di = Current;
-                while (Base.FullName.TrimEnd(new char[] { '\\', '/' }) != di.FullName.TrimEnd(new char[] { '\\', '/' }))
+                DirectoryInfoCache dic = Current;
+                while (Base != dic)
                 {
-                    dirs.Add(di.Name);
-                    di = di.Parent;
+                    dirs.Add(dic.Item.Name);
+                    dic = dic.Parent;
                 }
                 dirs.Reverse();
                 StringBuilder bldr = new StringBuilder();
@@ -384,9 +459,9 @@ namespace WikipediaConv
             string untilCur = FileNameHeadUntilCurrent;
             string key = FileNameToSortKey(file);
             if (key.Length == untilCur.Length)
-                return Current.FullName;
+                return Current.Item.FullName;
             string nextHead = LookupSortChar(key, untilCur.Length);
-            return Path.Combine(Current.FullName, nextHead);
+            return Path.Combine(Current.Item.FullName, nextHead);
         }
 
         internal string LookupSortChar(string key, int curLen)
@@ -420,7 +495,7 @@ namespace WikipediaConv
         {
             get
             {
-                return BiggerThanLimit(Current.EnumerateFiles("*" + Extension), MaxFileNum);
+                return BiggerThanLimit(Current.Item.EnumerateFiles("*" + Extension), MaxFileNum);
             }
         }
 
@@ -428,7 +503,7 @@ namespace WikipediaConv
             get 
             {
 
-                var dirs = Current.EnumerateDirectories();
+                var dirs = Current.Item.EnumerateDirectories();
                 foreach(var dir in dirs)
                 {
                     return true; // at least one dir exist.

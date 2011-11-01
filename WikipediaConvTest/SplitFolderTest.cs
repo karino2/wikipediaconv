@@ -647,9 +647,31 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         public void TestFileNameHeadUntilCurrent_TwoLevel()
         {
             string expected = "ika";
-            SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"), new DirectoryInfo(@"I:\hoge\i\k\a"));
+            SplitFolder sf = CreateSplitFolder(new DirectoryInfo(@"I:\hoge"), new DirectoryInfo(@"I:\hoge\i\k\a"));
             string actual = sf.FileNameHeadUntilCurrent;
             Assert.AreEqual(expected, actual);
+        }
+
+        SplitFolder CreateSplitFolder(DirectoryInfo baseDi, DirectoryInfo curDi)
+        {
+            var sf = new SplitFolder(baseDi);
+            var cur = new DirectoryInfoCache(null, curDi);
+            sf.Current = cur;
+            // setup parent
+            var baseDIC = sf.StartDirectory;
+            cur = SetupDICParent(baseDIC, cur);
+            Assert.AreEqual(sf.StartDirectory, cur);
+            return sf;
+        }
+
+        private static DirectoryInfoCache SetupDICParent(DirectoryInfoCache baseDIC, DirectoryInfoCache cur)
+        {
+            while (!DirectoryInfoCache.PathEqual(baseDIC.Item, cur.Item))
+            {
+                cur.Parent = new DirectoryInfoCache(null, cur.Item.Parent);
+                cur = cur.Parent;
+            }
+            return cur;
         }
 
 
@@ -657,7 +679,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         public void TestFileNameHeadUntilCurrent_RootEndWithBackSlash()
         {
             string expected = "ika";
-            SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge\"), new DirectoryInfo(@"I:\hoge\i\k\a\"));
+            SplitFolder sf = CreateSplitFolder(new DirectoryInfo(@"I:\hoge\"), new DirectoryInfo(@"I:\hoge\i\k\a\"));
             string actual = sf.FileNameHeadUntilCurrent;
             Assert.AreEqual(expected, actual);
         }
@@ -672,15 +694,28 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             Assert.AreEqual(expected, actual);
         }
 
+
+        public static DirectoryInfoCache CreateDIC(string path)
+        {
+            return new DirectoryInfoCache(null, new DirectoryInfo(path));
+        }
+
         [Test]
         public void TestGetMatchedSubdirectoryPath_SecondLevel()
         {
             string expected = @"I:\hoge\i\k";
             SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"));
-            sf.Current = new DirectoryInfo(@"I:\hoge\i");
+            sf.Current = CreateDIC(sf.StartDirectory, @"I:\hoge\i");
             string actual = sf.GetMatchedSubdirectoryPath(new FileInfo(@"I:\hoge\ika.txt"));
 
             Assert.AreEqual(expected, actual);
+        }
+
+        private DirectoryInfoCache CreateDIC(DirectoryInfoCache baseDIC, string path)
+        {
+            var dic = CreateDIC(path);
+            SetupDICParent(baseDIC, dic);
+            return dic;
         }
 
         [Test]
@@ -688,7 +723,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         {
             string expected = @"I:\hoge\a";
             SplitFolder sf = new SplitFolder(new DirectoryInfo(@"I:\hoge"));
-            sf.Current = new DirectoryInfo(@"I:\hoge\a");
+            sf.Current = new DirectoryInfoCache(sf.StartDirectory, new DirectoryInfo(@"I:\hoge\a"));
             string actual = sf.GetMatchedSubdirectoryPath(new FileInfo(@"I:\hoge\a.html"));
 
             Assert.AreEqual(expected, actual);
@@ -830,7 +865,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         private static void VerifyLookupSortCharJP(string input, int start, string expected)
         {
             var di = new DirectoryInfo("./");
-            var folder = new SplitFolder(di, di, new JapaneseTactics());
+            var folder = new SplitFolder(di, new JapaneseTactics());
             string actual = folder.LookupSortChar(input, start);
             Assert.AreEqual(expected, actual);
         }
@@ -840,7 +875,7 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             var di = new DirectoryInfo("./");
             SplitFolder folder;
             if (japanese)
-                folder = new SplitFolder(di, di, new JapaneseTactics());
+                folder = new SplitFolder(di, new JapaneseTactics());
             else
                 folder = new SplitFolder(di);
             string actual = folder.FileNameToSortKey(new FileInfo(input));

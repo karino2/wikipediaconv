@@ -606,7 +606,7 @@ namespace WikipediaConv
         {
             // no progress information now.
             public event ProgressChangedEventHandler ProgressChanged;
-            ForestWalker<DirectoryInfo> _walker;
+            ForestWalker<DirectoryInfoCache> _walker;
 
             bool _abort = false;
             int _epubChapterNum = Properties.Settings.Default.ArchiveNum;
@@ -617,7 +617,7 @@ namespace WikipediaConv
             public GenerateEpubTask(DirectoryInfo workDir, Action<IEnumerable<FileInfo>, string> archive, string extension)
             {
                 Archive = archive;
-                var node = SplitFolder.DirectoryForest(workDir);
+                var node = DirectoryInfoCache.Forest(workDir);
                 _walker = node.Walker;
                 Extension = extension;
                 SourceExtension = ".html";
@@ -645,9 +645,9 @@ namespace WikipediaConv
                 {
                     if (_abort)
                         break; // to call ReportProgress Finished for closing dialog.
-                    if (node.CurrentEdge == ForestNode<DirectoryInfo>.Edge.Trailing)
+                    if (node.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
                         continue;
-                    var di = node.Element;
+                    var di = node.Element.Item;
                     var fisEnum = di.EnumerateFiles("*"+ SourceExtension).GetEnumerator();
                     List<FileInfo> flist = new List<FileInfo>();
                     while(fisEnum.MoveNext())
