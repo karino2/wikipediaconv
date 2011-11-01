@@ -4,3 +4,4 @@ date, all, locate, load, dump, split, getyomi, other, comment
 2011/10/31 20:53, 28.19, 1.75, 3.19, 1.46, 6.17, 14.51, 0.00, IndexOf use hint
 2011/10/31 21:30, 25.01, 3.00, 5.50, 1.74, 11.75, 1.83, 0.00, GetRawContent: use decoded content
 2011/10/31 23:18, 27.65, 3.43, 3.88, 2.26, 14.07, 1.61, 0.00, dirty flag, no change, why?
+2011/11/01 13:24, 25.78, 3.34, 6.37, 2.82, 9.55, 1.55, 0.00, di cache
