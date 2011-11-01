@@ -5,6 +5,19 @@ using System.Text;
 
 namespace WikipediaConv
 {
+    public class DisposableWatch : IDisposable
+    {
+        StopWatch _sw;
+        public DisposableWatch(StopWatch sw)
+        {
+            _sw = sw;
+            _sw.Start();
+        }
+        public void Dispose()
+        {
+            _sw.Stop();
+        }
+    }
     public class PerfCounter
     {
         public Func<DateTime> Now = () => DateTime.Now;
@@ -18,6 +31,11 @@ namespace WikipediaConv
         public double GetTotalSeconds(string name)
         {
             return GetStopWatch(name).Total.TotalMilliseconds / 1000.0;
+        }
+        public DisposableWatch UsingWatch(string name)
+        {
+            // Start() is called in constructer.
+            return new DisposableWatch(GetStopWatch(name));
         }
         public void Start(string name)
         {
