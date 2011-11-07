@@ -322,12 +322,12 @@ namespace WikipediaConv
             ReportProgress(0, DecodingProgress.State.Finished, String.Empty);
         }
 
-        /*
         private int _loggingInterval = 100000;
         private int _nextLogging = 100000;
-         * */
+        /*
         private int _loggingInterval =2;
         private int _nextLogging = 2;
+         * */
         private void AutoLogging()
         {
             if (ActionCalledNum > _nextLogging)
