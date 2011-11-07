@@ -652,6 +652,8 @@ namespace WikipediaConv
                     List<FileInfo> flist = new List<FileInfo>();
                     while(fisEnum.MoveNext())
                     {
+                        if (_abort)
+                            break;
                         var dirname = fisEnum.Current.Directory.FullName;
                         flist.Clear();
                         CopyRange(flist, fisEnum, _epubChapterNum);
