@@ -244,6 +244,11 @@ namespace WikipediaConv
         {
             return !a.Equals(b);
         }
+
+        internal void InvalidateCache()
+        {
+            _children = null;
+        }
     }
 
     public class SplitFolder
@@ -271,6 +276,7 @@ namespace WikipediaConv
         public DirectoryInfoCache StartDirectory { get; set; }
 
         public Dictionary<string, bool> _dirty;
+        public Dictionary<string, bool> _splitted;
 
         public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics)
         {
@@ -282,8 +288,18 @@ namespace WikipediaConv
             MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
             Extension = ".html";
             _dirty = new Dictionary<string, bool>();
+            _splitted = new Dictionary<string, bool>();
         }
 
+        bool IsChecked(string path)
+        {
+            return _splitted.ContainsKey(path);
+        }
+
+        bool IsSplitted(string path)
+        {
+            return _splitted[path];
+        }
 
         private static bool BiggerThanLimit(IEnumerable<FileInfo> fileEnum, int upperLimit)
         {
@@ -311,6 +327,7 @@ namespace WikipediaConv
         public bool Abort { get; set; }
 
         ForestWalker<DirectoryInfoCache> _walker;
+        private bool _splitDictInit = false;
 
         public void StartSplit()
         {
@@ -320,6 +337,24 @@ namespace WikipediaConv
             _walker = root.Walker;
             _dirty.Clear();
             SetDirty(StartDirectory.Item.FullName);
+            InitSplittedDictionary();
+        }
+
+        // for profiling purpose only.
+        private void InitSplittedDictionary()
+        {
+            if (_splitDictInit)
+                return;
+            _splitDictInit = true;
+            var walker= DirectoryInfoCache.Forest(StartDirectory).Walker;
+            while (walker.HasNext)
+            {
+                walker.MoveNext();
+                var node = walker.Current;
+                if (node.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
+                    continue;
+                SetSplittedFlag(node.Element.Item.FullName, HasSubDirectories(node.Element));                
+            }
         }
 
         void SetDirty(string fullName)
@@ -394,10 +429,10 @@ namespace WikipediaConv
             return true;
         }
 
-        internal virtual void MoveTo(FileInfo target, string dest)
+        internal virtual void MoveTo(DirectoryInfoCache from, FileInfo target, string dest)
         {
             var destPath = Path.Combine(dest, target.Name);
-            EnsureDirectory(dest);
+            EnsureDirectory(from, dest);
 #if DIRTY
             SetDirty(dest);
 #endif
@@ -428,7 +463,7 @@ namespace WikipediaConv
                 if (dest != Current.Item.FullName)
                 {
                     moveSomething = true;
-                    MoveTo(file, dest);
+                    MoveTo(Current, file, dest);
                 }
             }
             return moveSomething;
@@ -480,11 +515,17 @@ namespace WikipediaConv
         }
 
 
-        void EnsureDirectory(string path)
+        void EnsureDirectory(DirectoryInfoCache parent, string path)
         {
             var di = new DirectoryInfo(path);
             if (!di.Exists)
+            {
                 di.Create();
+                Debug.Assert(DirectoryInfoCache.PathEqual(parent.Item, di.Parent));
+                SetSplittedFlag(di.Parent.FullName, true);
+                SetSplittedFlag(di.FullName, false);
+                parent.InvalidateCache();
+            }
         }
 
 
@@ -502,14 +543,35 @@ namespace WikipediaConv
         public bool AlreadySplited { 
             get 
             {
+                var path = NormalizedFullName(Current.Item.FullName);
+                if (IsChecked(path))
+                    return IsSplitted(path);
 
-                var dirs = Current.Item.EnumerateDirectories();
-                foreach(var dir in dirs)
-                {
-                    return true; // at least one dir exist.
-                }
-                return false;
+                var hasSub = HasSubDirectories();
+                SetSplittedFlag(path, hasSub);
+                return hasSub;
             } 
+        }
+
+        private void SetSplittedFlag(string path, bool hasSub)
+        {
+            _splitted[NormalizedFullName(path)] = hasSub;
+        }
+
+        private bool HasSubDirectories()
+        {
+            var cur = Current;
+            return HasSubDirectories(cur);
+        }
+
+        private static bool HasSubDirectories(DirectoryInfoCache cur)
+        {
+            var dirs = cur.Item.EnumerateDirectories();
+            foreach (var dir in dirs)
+            {
+                return true; // at least one dir exist.
+            }
+            return false;
         }
     }
 }
