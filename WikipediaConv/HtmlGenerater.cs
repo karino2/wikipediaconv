@@ -69,5 +69,7 @@ namespace WikipediaConv
         }
         public ILongTask LongTask { get { return _bzipReader; } }
         public DirectoryInfo OutputRoot { get { return _action.OutputRoot; } }
+
+        public bool EnableAutoLogging { set { _bzipReader.EnableAutoLogging = value; } }
     }
 }

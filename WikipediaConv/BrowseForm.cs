@@ -602,7 +602,7 @@ namespace WikipediaConv
             return ip;
         }
 
-        public class GenerateEpubTask : ILongTask
+        public class ArchiveTask : ILongTask
         {
             // no progress information now.
             public event ProgressChangedEventHandler ProgressChanged;
@@ -614,7 +614,7 @@ namespace WikipediaConv
             Action<IEnumerable<FileInfo>, string> Archive;
             public string Extension { get; set; }
 
-            public GenerateEpubTask(DirectoryInfo workDir, Action<IEnumerable<FileInfo>, string> archive, string extension)
+            public ArchiveTask(DirectoryInfo workDir, Action<IEnumerable<FileInfo>, string> archive, string extension)
             {
                 Archive = archive;
                 var node = DirectoryInfoCache.Forest(workDir);
@@ -717,6 +717,8 @@ namespace WikipediaConv
 
         }
 
+        private bool EnableAutoLogging = true;
+
         private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfo, PerfCounter, Dumper> createDumper, string outputExtension, string sourceExtension)
         {
             using (var uwAll = _counter.UsingWatch("All"))
@@ -727,6 +729,7 @@ namespace WikipediaConv
                     bool isJapanese = IsJapanese(file);
                     Dumper gen = createDumper(file, isJapanese, di, _counter);
                     di = di ?? gen.OutputRoot;
+                    gen.EnableAutoLogging = EnableAutoLogging;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
                     {
                         // MessageBox.Show("generate html cancelled");
@@ -739,9 +742,9 @@ namespace WikipediaConv
                 {
                     using (var uwArchive = _counter.UsingWatch("Archive"))
                     {
-                        GenerateEpubTask epub = new GenerateEpubTask(di, archive, outputExtension);
-                        epub.SourceExtension = sourceExtension;
-                        if (DialogResult.OK != new ProgressDialog(epub, _counter).ShowDialog(this))
+                        ArchiveTask archiveTask = new ArchiveTask(di, archive, outputExtension);
+                        archiveTask.SourceExtension = sourceExtension;
+                        if (DialogResult.OK != new ProgressDialog(archiveTask, _counter).ShowDialog(this))
                         {
                             MessageBox.Show("generate epub cancelled");
                             return;

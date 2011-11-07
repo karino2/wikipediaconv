@@ -147,6 +147,8 @@ namespace WikipediaConv
         private long previousBlockBeginning = -1;
         private long previousBlockEnd = -1;
         private int activeThreads = 0;
+        private int actionCalledNum = 0;
+        public int ActionCalledNum { get{ return actionCalledNum; }}
 
         /// <summary>
         /// Whether to use multiple threads while indexing the documents
@@ -173,6 +175,7 @@ namespace WikipediaConv
             multithreadedIndexing = (Environment.ProcessorCount > 1);
             abortDecoding = false;
             EnableYomi = false;
+            EnableAutoLogging = false;
         }
 
         public bool EnableYomi { get; set; }
@@ -288,6 +291,12 @@ namespace WikipediaConv
                         charCarryOver = new char[0];
                     }
 
+                    // this is not exact place to handle, but least side effect for measurement and mostly correct.
+                    if (EnableAutoLogging)
+                    {
+                        AutoLogging();
+                    }
+
                     #endregion
                 }
 
@@ -311,6 +320,45 @@ namespace WikipediaConv
             // Try to release some memory
             FinalizeAction(failed);
             ReportProgress(0, DecodingProgress.State.Finished, String.Empty);
+        }
+
+        /*
+        private int _loggingInterval = 100000;
+        private int _nextLogging = 100000;
+         * */
+        private int _loggingInterval =2;
+        private int _nextLogging = 2;
+        private void AutoLogging()
+        {
+            if (ActionCalledNum > _nextLogging)
+            {
+                LogPerfCounter();
+                _nextLogging += _loggingInterval;
+            }
+        }
+
+        private string _outputPath = null;
+        private void LogPerfCounter()
+        {
+            try
+            {
+                var outputDir = Path.GetDirectoryName(filePath);
+                if (_outputPath == null)
+                    _outputPath = Path.Combine(outputDir, DateTime.Now.ToString("yyyyMMddHHmmss") + ".log");
+                using (var file = new FileStream(_outputPath, FileMode.Append))
+                using (var sw = new StreamWriter(file))
+                {
+                    sw.Write(Counter.ToString());
+                    sw.WriteLine("-----");
+                    sw.WriteLine();
+                    sw.WriteLine();
+                }
+            }
+            catch (Exception)
+            {
+                // this is just logging, not important task.
+            }
+            
         }
 
         /// <summary>
@@ -703,9 +751,10 @@ namespace WikipediaConv
             PageInfo pi = (PageInfo)state;
             bool handled = _action.Action(pi);
             Interlocked.Decrement(ref activeThreads);
+            Interlocked.Increment(ref actionCalledNum);
 
             if(handled)
-                _currentHandledFileNum++;
+                Interlocked.Increment(ref _currentHandledFileNum);
             Counter.Stop("Action");
         }
 
@@ -1064,5 +1113,7 @@ namespace WikipediaConv
         }
 
         #endregion
+
+        public bool EnableAutoLogging { get; set; }
     }
 }
