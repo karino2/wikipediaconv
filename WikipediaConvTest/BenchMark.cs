@@ -1,4 +1,4 @@
-﻿// #define BIGDATA
+﻿#define BIGDATA
 
 using System;
 using System.Collections.Generic;
@@ -20,47 +20,13 @@ namespace WikipediaConvTest
         }
         public bool EnableReport { get; set; }
 
-        // [Test]
-        public void DoSomething()
-        {
-            /*
-            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
-            {
-                const int size = 1024 * 1024;
-                byte[] buf = new byte[size];
-                using (var headWriter = new FileStream(@"../../../../jahead.xml", FileMode.CreateNew))
-                {
-                    var res = reader.Read(buf, 0, size);
-                    headWriter.Write(buf, 0, res);
-                }
-
-                using (var tailWriter = new FileStream(@"../../../../jatail.xml", FileMode.CreateNew))
-                {
-                    reader.Seek(-size, SeekOrigin.End);
-                    var res = reader.Read(buf, 0, size);
-                    tailWriter.Write(buf, 0, res);
-                }
-            }
-             * */
-            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
-            {
-                const int size = 1024 * 1024*10;
-                byte[] buf = new byte[size];
-                using (var headWriter = new FileStream(@"../../../../jahead_10M.xml", FileMode.CreateNew))
-                {
-                    var res = reader.Read(buf, 0, size);
-                    headWriter.Write(buf, 0, res);
-                }
-            }
-        }
-
-        [Test]
-        public void TestIndexOf()
-        {
-            var target = "abcdefgdd";
-            var actual = target.IndexOf("def", 3, 3);
-            Assert.AreEqual(3, actual);
-        }
+#if BIGDATA
+        const string JA_HEAD_NAME = "jahead_10M.xml.bz2";
+        const string RESULT_CSV_NAME = "result_big.csv";
+#else
+        const string JA_HEAD_NAME = "jahead.xml.bz2";
+        const string RESULT_CSV_NAME = "result.csv";
+#endif
 
         // this is not test, but use nunit!
         [Test]
@@ -70,11 +36,7 @@ namespace WikipediaConvTest
             var benchDir = solutionDir + "bench/";
             var outputDir = new DirectoryInfo(solutionDir + "test_tmp_result");
             CleanUp(outputDir);
-#if BIGDATA
-            var bzipPath = benchDir + "jahead_10M.xml.bz2";
-#else
-            var bzipPath = benchDir + "jahead.xml.bz2";
-#endif
+            var bzipPath = benchDir + JA_HEAD_NAME;
             PerfCounter counter = new PerfCounter();
             counter.Start("AllBench");
             var dumper = Dumper.CreateRawDumper(bzipPath, true, outputDir, counter);
@@ -98,7 +60,7 @@ namespace WikipediaConvTest
 
         private void Report(string benchDir, PerfCounter counter)
         {
-            var csvPath = benchDir + "result.csv";
+            var csvPath = benchDir + RESULT_CSV_NAME;
             var tmpPath = benchDir + "result_tmp.csv";
             using (var input = new StreamReader(csvPath))
             {
@@ -163,5 +125,48 @@ namespace WikipediaConvTest
                 outputDir.Create();
             }
        }
+
+        // [Test]
+        public void DoSomething()
+        {
+            /*
+            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
+            {
+                const int size = 1024 * 1024;
+                byte[] buf = new byte[size];
+                using (var headWriter = new FileStream(@"../../../../jahead.xml", FileMode.CreateNew))
+                {
+                    var res = reader.Read(buf, 0, size);
+                    headWriter.Write(buf, 0, res);
+                }
+
+                using (var tailWriter = new FileStream(@"../../../../jatail.xml", FileMode.CreateNew))
+                {
+                    reader.Seek(-size, SeekOrigin.End);
+                    var res = reader.Read(buf, 0, size);
+                    tailWriter.Write(buf, 0, res);
+                }
+            }
+             * */
+            using (var reader = new FileStream(@"../../../../jawiki-20110921-pages-articles.xml", FileMode.Open))
+            {
+                const int size = 1024 * 1024 * 10;
+                byte[] buf = new byte[size];
+                using (var headWriter = new FileStream(@"../../../../jahead_10M.xml", FileMode.CreateNew))
+                {
+                    var res = reader.Read(buf, 0, size);
+                    headWriter.Write(buf, 0, res);
+                }
+            }
+        }
+
+        [Test]
+        public void TestIndexOf()
+        {
+            var target = "abcdefgdd";
+            var actual = target.IndexOf("def", 3, 3);
+            Assert.AreEqual(3, actual);
+        }
+
     }
 }
