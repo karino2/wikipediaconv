@@ -712,34 +712,41 @@ namespace WikipediaConv
                 // picked dump bzip file should place in the same folder.
 
                 var archiver = new EPubArchiver();
-                DumpFileToArchive(fd.FileNames, archiver.Archive, ".epub");
+                DumpFileToArchive(fd.FileNames, archiver.Archive, Dumper.CreateHtmlGenerater, ".epub", ".html");
             }
 
         }
 
-        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, string extension)
+        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfo, PerfCounter, Dumper> createDumper, string outputExtension, string sourceExtension)
         {
-            DirectoryInfo di = null;
-            foreach (string file in files)
+            using (var uwAll = _counter.UsingWatch("All"))
             {
-                bool isJapanese = IsJapanese(file);
-                Dumper gen = Dumper.CreateHtmlGenerater(file, isJapanese, di, _counter);
-                di = di ?? gen.OutputRoot;
-                if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
+                DirectoryInfo di = null;
+                foreach (string file in files)
                 {
-                    MessageBox.Show("generate html cancelled");
-                    // tmp fall through. 
-                    // return;
+                    bool isJapanese = IsJapanese(file);
+                    Dumper gen = createDumper(file, isJapanese, di, _counter);
+                    di = di ?? gen.OutputRoot;
+                    if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
+                    {
+                        // MessageBox.Show("generate html cancelled");
+                        // tmp fall through. 
+                        // return;
+                    }
                 }
-            }
 
-            if (di != null)
-            {
-                GenerateEpubTask epub = new GenerateEpubTask(di, archive, extension);
-                if (DialogResult.OK != new ProgressDialog(epub, _counter).ShowDialog(this))
+                if (di != null)
                 {
-                    MessageBox.Show("generate epub cancelled");
-                    return;
+                    using (var uwArchive = _counter.UsingWatch("Archive"))
+                    {
+                        GenerateEpubTask epub = new GenerateEpubTask(di, archive, outputExtension);
+                        epub.SourceExtension = sourceExtension;
+                        if (DialogResult.OK != new ProgressDialog(epub, _counter).ShowDialog(this))
+                        {
+                            MessageBox.Show("generate epub cancelled");
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -757,38 +764,8 @@ namespace WikipediaConv
 
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
-                using (var uwAll = _counter.UsingWatch("All"))
-                {
-                    DirectoryInfo di = null;
-                    foreach (string file in fd.FileNames)
-                    {
-                        bool isJapanese = IsJapanese(file);
-
-                        Dumper gen = Dumper.CreateRawDumper(file, isJapanese, di, _counter);
-                        di = di ?? gen.OutputRoot;
-                        if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
-                        {
-                            // MessageBox.Show("generate html cancelled");
-                            // tmp fall through. 
-                            // return;
-                        }
-                    }
-
-                    if (di != null)
-                    {
-                        using (var uwArchive = _counter.UsingWatch("Archive"))
-                        {
-                            var archiver = new PdfArchiver();
-                            GenerateEpubTask epub = new GenerateEpubTask(di, archiver.Archive, ".pdf");
-                            epub.SourceExtension = ".wiki";
-                            if (DialogResult.OK != new ProgressDialog(epub, _counter).ShowDialog(this))
-                            {
-                                MessageBox.Show("generate epub cancelled");
-                                return;
-                            }
-                        }
-                    }
-                }
+                var archiver = new PdfArchiver();
+                DumpFileToArchive(fd.FileNames, archiver.Archive, Dumper.CreateRawDumper, ".pdf", ".wiki");
             }
         }
 
