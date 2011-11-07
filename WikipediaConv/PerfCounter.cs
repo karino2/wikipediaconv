@@ -61,6 +61,21 @@ namespace WikipediaConv
         public int Count { get; set; }
         public TimeSpan Total { get; set; }
 
+        public TimeSpan _last;
+        public TimeSpan Last
+        {
+            get
+            {
+                if (_isStarted)
+                    return Now().Subtract(_start);
+                return _last;
+            }
+            set
+            {
+                _last = value;
+            }
+        }
+
         // seconds
         public double Average
         {
@@ -92,6 +107,10 @@ namespace WikipediaConv
 
             bldr.Append("max: ");
             bldr.Append(Max);
+            bldr.AppendLine();
+
+            bldr.Append("last: ");
+            bldr.Append(Last);
             bldr.AppendLine();
 
             bldr.Append("total: ");
@@ -131,6 +150,7 @@ namespace WikipediaConv
             Max = MaxTimeSpan(Max, elapsed);
             Min = MinTimeSpan(Min, elapsed);
             Total += elapsed;
+            Last = elapsed;
         }
 
         public TimeSpan MaxTimeSpan(TimeSpan a, TimeSpan b)
