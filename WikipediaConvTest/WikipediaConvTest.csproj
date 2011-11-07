@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BenchMark.cs" />
+    <Compile Include="DirectoryInfoCacheTest.cs" />
     <Compile Include="HtmlGeneraterActionTest.cs" />
     <Compile Include="ForestWalkerTest.cs" />
     <Compile Include="PerfCounterTest.cs" />

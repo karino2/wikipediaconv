@@ -63,7 +63,7 @@ namespace WikipediaConv
             rawDump.OutputRoot = result;
             Dumper dumper =  new Dumper(bzipPath, rawDump, counter);
             SplitFolder sf = CreateSplitFolder(isJapanese, dumper);
-            sf.Extension = ".wiki";
+            sf.InterestedFilePattern = "*.wiki";
             PostCreate(dumper, isJapanese, sf);
             return dumper;
         }

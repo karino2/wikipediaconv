@@ -103,7 +103,7 @@ namespace WikipediaConvTest
         {
             if (outputDir.Exists)
             {
-                var walker = DirectoryInfoCache.Forest(outputDir).Walker;
+                var walker = DirectoryInfoCache.ForestWithSync(outputDir).Walker;
                 while (walker.HasNext)
                 {
                     walker.MoveNext();

@@ -147,50 +147,131 @@ namespace WikipediaConv
         }
     }
 
-
     public class DirectoryInfoCache
     {
         public DirectoryInfoCache Parent;
         public DirectoryInfo Item;
-        private DirectoryInfo[] _children = null;
+
+        private List<DirectoryInfoCache> _children = new List<DirectoryInfoCache>();
+        private string _fullName;
+
+        public bool PossiblyMoveFromOutside { get; set; }
+
+        private int _fileCount;
+        public int FileCount {
+            get
+            {
+                if (PossiblyMoveFromOutside)
+                {
+                    // always use native value. only used at root folder.
+                    // Warning! do not cashed. very slow.
+                    Debug.Assert(Parent == null);
+                    return Item.EnumerateFiles(InterestedFilePattern).Count();
+                }
+                return _fileCount;
+            }
+            set { _fileCount = value; }
+        }
+        public string InterestedFilePattern { get; set; }
         public DirectoryInfoCache(DirectoryInfoCache parent, DirectoryInfo item)
         {
             Parent = parent;
+            if (parent != null)
+                InterestedFilePattern = parent.InterestedFilePattern;
+            PossiblyMoveFromOutside = false;
             Item = item;
+            _fullName = NormalizedFullName(item.FullName);
+            FileCount = 0;
         }
 
         public int ChildrenLength
         {
-            get { return DirectoryInfoChildren.Length; }
+            get { return _children.Count; }
         }
 
         public DirectoryInfoCache GetChild(int i)
         {
-            return new DirectoryInfoCache(this, DirectoryInfoChildren[i]);
+            return _children[i];
         }
+
+        public List<DirectoryInfoCache> Children { get { return _children; } }
 
         public int ChildIndex
         {
             get
             {
-                for (int i = 0; i < Parent.ChildrenLength; i++)
-                {
-                    if (Parent.GetChild(i).Item.FullName == Item.FullName)
-                        return i;
-                }
-                return -1;
+                return Parent.Children.FindIndex((x) => this == x);
             }
         }
 
-        private DirectoryInfo[] DirectoryInfoChildren
+        public void SyncAllToFileSystem()
         {
-            get
+            Debug.Assert(this.Parent == null);
+            var walker = DirectoryInfoCache.Forest(this).Walker;
+            while (walker.HasNext)
             {
-                if (_children == null)
-                    _children = Item.GetDirectories();
-                return _children;
+                walker.MoveNext();
+                var node = walker.Current;
+                if (node.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
+                    continue;
+                node.Element.SyncToFileSystem();
             }
         }
+
+        // do not sync children.
+        public void SyncToFileSystem()
+        {
+            foreach (var di in Item.EnumerateDirectories())
+            {
+                SaveToCache(di);
+            }
+            if(!PossiblyMoveFromOutside && !String.IsNullOrEmpty(InterestedFilePattern))
+                FileCount = Item.EnumerateFiles(InterestedFilePattern).Count();
+        }
+
+
+        public void MoveTo(FileInfo target, DirectoryInfoCache to, string newName)
+        {
+            // Debug.Assert(Array.Exists(Item.GetFiles(InterestedFilePattern), (x) => x == target));
+            RawMoveTo(target, to.FullName, newName);
+            to.FileCount++;
+            FileCount--;
+        }
+
+        public DirectoryInfoCache CreateSubdirectory(string name)
+        {
+            var di = RawCreateSubdirectory(name);
+            var diCache = SaveToCache(di);
+            return diCache;
+        }
+
+        private DirectoryInfoCache SaveToCache(DirectoryInfo di)
+        {
+            var diCache = new DirectoryInfoCache(this, di);
+            _children.Add(diCache);
+            return diCache;
+        }
+
+
+        protected virtual DirectoryInfo RawCreateSubdirectory(string name)
+        {
+            return Item.CreateSubdirectory(name);
+        }
+
+        protected virtual void RawMoveTo(FileInfo target, string destPath, string newName)
+        {
+            target.MoveTo(Path.Combine(destPath, newName));
+        }
+
+        public static ForestNode<DirectoryInfoCache> ForestWithSync(DirectoryInfo cur)
+        {
+            var dic = new DirectoryInfoCache(null, cur);
+            dic.SyncAllToFileSystem();
+            return Forest(dic);
+        }
+
+
+
         public static ForestNode<DirectoryInfoCache> Forest(DirectoryInfo cur)
         {
             var dic = new DirectoryInfoCache(null, cur);
@@ -205,12 +286,8 @@ namespace WikipediaConv
                 (x) => x.Parent,
                 (x) => x.ChildrenLength,
                 (x) => x.ChildIndex,
-                (x, y) => PathEqual(x.Item, y.Item));
+                (x, y) => x.FullName == y.FullName);
             return root;
-        }
-        public static bool PathEqual(DirectoryInfo x, DirectoryInfo y)
-        {
-            return NormalizedFullName(x.FullName) == NormalizedFullName(y.FullName);
         }
 
         private static string NormalizedFullName(string fullName)
@@ -221,8 +298,10 @@ namespace WikipediaConv
 
         public override int GetHashCode()
         {
-            return NormalizedFullName(Item.FullName).GetHashCode();
+            return _fullName.GetHashCode();
         }
+
+        public string FullName { get { return _fullName; } }
 
         public override bool Equals(object other)
         {
@@ -231,23 +310,30 @@ namespace WikipediaConv
             if (other is DirectoryInfoCache)
             {
                 DirectoryInfoCache dic = other as DirectoryInfoCache;
-                return PathEqual(Item, dic.Item);
+                return _fullName == dic.FullName;
             }
             return false;
         }
 
         public static bool operator ==(DirectoryInfoCache a, DirectoryInfoCache b)
         {
+            if (null == (object)a)
+                return null == (object)b;
             return a.Equals(b);
         }
         public static bool operator !=(DirectoryInfoCache a, DirectoryInfoCache b)
         {
+            if (null == (object)a)
+                return null != (object)b;
             return !a.Equals(b);
         }
 
-        internal void InvalidateCache()
+        internal DirectoryInfoCache EnsureSubdirectory(string relativeSub)
         {
-            _children = null;
+            var sub = Children.Find((di) => Path.Combine(FullName, relativeSub) == di.FullName);
+            if (sub != null)
+                return sub;
+            return CreateSubdirectory(relativeSub);
         }
     }
 
@@ -263,8 +349,6 @@ namespace WikipediaConv
         DirectoryInfoCache Base { get; set; }
         internal DirectoryInfoCache Current { get; set; }
 
-        public string Extension { get; set; }
-
         ISplitTactics _tactics;
 
 
@@ -276,53 +360,24 @@ namespace WikipediaConv
         public DirectoryInfoCache StartDirectory { get; set; }
 
         public Dictionary<string, bool> _dirty;
-        public Dictionary<string, bool> _splitted;
 
         public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics)
         {
             Abort = false;
             _tactics = tactics;
+
             Base = new DirectoryInfoCache(null, baseDi);
+            Base.PossiblyMoveFromOutside = true;
+            InterestedFilePattern = "*.html";
+
             Current = Base;
             StartDirectory = Current;
             MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
-            Extension = ".html";
             _dirty = new Dictionary<string, bool>();
-            _splitted = new Dictionary<string, bool>();
         }
 
-        bool IsChecked(string path)
-        {
-            return _splitted.ContainsKey(path);
-        }
-
-        bool IsSplitted(string path)
-        {
-            return _splitted[path];
-        }
-
-        private static bool BiggerThanLimit(IEnumerable<FileInfo> fileEnum, int upperLimit)
-        {
-            int count = 0;
-            foreach (var f in fileEnum)
-            {
-                count++;
-                if (count >= upperLimit)
-                    return true;
-            }
-            return false;
-        }
-
-        static int ChildIndex(DirectoryInfo di)
-        {
-            DirectoryInfo[] dirs = di.Parent.GetDirectories();
-            for (int i = 0; i < dirs.Length; i++)
-            {
-                if (dirs[i].FullName == di.FullName)
-                    return i;
-            }
-            return -1;
-        }
+        // Warning! call this function before creating sub node!
+        public string InterestedFilePattern { set { Base.InterestedFilePattern = value; } }
 
         public bool Abort { get; set; }
 
@@ -333,33 +388,25 @@ namespace WikipediaConv
         {
             Abort = false;
             Current = StartDirectory;
-            ForestNode<DirectoryInfoCache> root = DirectoryInfoCache.Forest(StartDirectory);
+            var root = DirectoryInfoCache.Forest(StartDirectory);
             _walker = root.Walker;
             _dirty.Clear();
             SetDirty(StartDirectory.Item.FullName);
-            InitSplittedDictionary();
+            SyncDirectoryInfoCacheToFileSystem();
         }
 
         // for profiling purpose only.
-        private void InitSplittedDictionary()
+        private void SyncDirectoryInfoCacheToFileSystem()
         {
             if (_splitDictInit)
                 return;
             _splitDictInit = true;
-            var walker= DirectoryInfoCache.Forest(StartDirectory).Walker;
-            while (walker.HasNext)
-            {
-                walker.MoveNext();
-                var node = walker.Current;
-                if (node.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
-                    continue;
-                SetSplittedFlag(node.Element.Item.FullName, HasSubDirectories(node.Element));                
-            }
+            StartDirectory.SyncAllToFileSystem();
         }
 
         void SetDirty(string fullName)
         {
-            _dirty[NormalizedFullName(fullName)] = true;
+            _dirty[fullName] = true;
         }
 
         public bool IsRunning
@@ -399,7 +446,7 @@ namespace WikipediaConv
 
         private bool IsDirty(string fullName)
         {
-            return _dirty.ContainsKey(NormalizedFullName(fullName));
+            return _dirty.ContainsKey(fullName);
         }
 
         public void Split()
@@ -429,27 +476,26 @@ namespace WikipediaConv
             return true;
         }
 
-        internal virtual void MoveTo(DirectoryInfoCache from, FileInfo target, string dest)
+        internal virtual void MoveTo(DirectoryInfoCache from, FileInfo target, string destRelative)
         {
-            var destPath = Path.Combine(dest, target.Name);
-            EnsureDirectory(from, dest);
+            var newName = target.Name;
+            var destDIC = EnsureSubdirectory(from, destRelative);
 #if DIRTY
-            SetDirty(dest);
+            SetDirty(destDIC.FullName);
 #endif
             for (int i = 0; i < 10; i++)
             {
                 try
                 {
-                    target.MoveTo(destPath);
+                    from.MoveTo(target, destDIC, newName);
                     return;
                 }
                 catch (IOException)
                 {
-                    var fname = Path.GetFileNameWithoutExtension(destPath);
-                    var targetPath = Path.GetDirectoryName(destPath);
-                    var extension = Path.GetExtension(destPath);
+                    var fname = Path.GetFileNameWithoutExtension(newName);
+                    var extension = Path.GetExtension(newName);
                     fname += 'X';
-                    destPath = Path.Combine(targetPath, fname + extension);
+                    newName = fname + extension;
                 }
             }
         }
@@ -459,11 +505,11 @@ namespace WikipediaConv
             bool moveSomething = false;
             foreach (var file in FileEnum)
             {
-                string dest = GetMatchedSubdirectoryPath(file);
-                if (dest != Current.Item.FullName)
+                string destRelative = GetMatchedSubcirectoryRelativePath(file);
+                if (!String.IsNullOrEmpty(destRelative))
                 {
                     moveSomething = true;
-                    MoveTo(Current, file, dest);
+                    MoveTo(Current, file, destRelative);
                 }
             }
             return moveSomething;
@@ -489,14 +535,21 @@ namespace WikipediaConv
             }
         }
 
-        internal string GetMatchedSubdirectoryPath(FileInfo file)
+        internal string GetMatchedSubcirectoryRelativePath(FileInfo file)
         {
             string untilCur = FileNameHeadUntilCurrent;
             string key = FileNameToSortKey(file);
             if (key.Length == untilCur.Length)
+                return "";
+            return LookupSortChar(key, untilCur.Length);
+        }
+
+        internal string GetMatchedSubdirectoryPath(FileInfo file)
+        {
+            var relative = GetMatchedSubcirectoryRelativePath(file);
+            if(String.IsNullOrEmpty(relative))
                 return Current.Item.FullName;
-            string nextHead = LookupSortChar(key, untilCur.Length);
-            return Path.Combine(Current.Item.FullName, nextHead);
+            return Path.Combine(Current.Item.FullName, relative);
         }
 
         internal string LookupSortChar(string key, int curLen)
@@ -515,20 +568,10 @@ namespace WikipediaConv
         }
 
 
-        void EnsureDirectory(DirectoryInfoCache parent, string path)
+        DirectoryInfoCache EnsureSubdirectory(DirectoryInfoCache parent, string relativeSub)
         {
-            var di = new DirectoryInfo(path);
-            if (!di.Exists)
-            {
-                di.Create();
-                Debug.Assert(DirectoryInfoCache.PathEqual(parent.Item, di.Parent));
-                SetSplittedFlag(di.Parent.FullName, true);
-                SetSplittedFlag(di.FullName, false);
-                parent.InvalidateCache();
-            }
+            return parent.EnsureSubdirectory(relativeSub);
         }
-
-
 
         public int MaxFileNum { get; set; }
 
@@ -536,42 +579,16 @@ namespace WikipediaConv
         {
             get
             {
-                return BiggerThanLimit(Current.Item.EnumerateFiles("*" + Extension), MaxFileNum);
+                return Current.FileCount > MaxFileNum;
             }
         }
 
         public bool AlreadySplited { 
             get 
             {
-                var path = NormalizedFullName(Current.Item.FullName);
-                if (IsChecked(path))
-                    return IsSplitted(path);
-
-                var hasSub = HasSubDirectories();
-                SetSplittedFlag(path, hasSub);
-                return hasSub;
+                return Current.ChildrenLength != 0;
             } 
         }
 
-        private void SetSplittedFlag(string path, bool hasSub)
-        {
-            _splitted[NormalizedFullName(path)] = hasSub;
-        }
-
-        private bool HasSubDirectories()
-        {
-            var cur = Current;
-            return HasSubDirectories(cur);
-        }
-
-        private static bool HasSubDirectories(DirectoryInfoCache cur)
-        {
-            var dirs = cur.Item.EnumerateDirectories();
-            foreach (var dir in dirs)
-            {
-                return true; // at least one dir exist.
-            }
-            return false;
-        }
     }
 }

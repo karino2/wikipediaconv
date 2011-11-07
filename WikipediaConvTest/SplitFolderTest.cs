@@ -666,9 +666,10 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
 
         private static DirectoryInfoCache SetupDICParent(DirectoryInfoCache baseDIC, DirectoryInfoCache cur)
         {
-            while (!DirectoryInfoCache.PathEqual(baseDIC.Item, cur.Item))
+            while (baseDIC != cur)
             {
                 cur.Parent = new DirectoryInfoCache(null, cur.Item.Parent);
+                cur.Parent.Children.Add(cur);
                 cur = cur.Parent;
             }
             return cur;
@@ -886,7 +887,6 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         {
             VerifyFileNameToSortKeyGeneric(input, expected, false);
         }
-
 
         // below here is not test, some experiment.
         // [Test]
