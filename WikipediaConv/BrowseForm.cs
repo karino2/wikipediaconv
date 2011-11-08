@@ -614,7 +614,7 @@ namespace WikipediaConv
             Action<IEnumerable<FileInfo>, string> Archive;
             public string Extension { get; set; }
 
-            public ArchiveTask(DirectoryInfo workDir, Action<IEnumerable<FileInfo>, string> archive, string extension)
+            public ArchiveTask(DirectoryInfoCache workDir, Action<IEnumerable<FileInfo>, string> archive, string extension)
             {
                 Archive = archive;
                 var node = DirectoryInfoCache.Forest(workDir);
@@ -705,6 +705,24 @@ namespace WikipediaConv
             }
         }
 
+        DirectoryInfoCache _workingDir = null;
+        DirectoryInfoCache GetWorkingDirectory(string bzipPath, string dirName, string interestedFilePattern)
+        {
+            if (_workingDir != null)
+                return _workingDir;
+            var parent = new FileInfo(bzipPath).Directory;
+            DirectoryInfo di = new DirectoryInfo(Path.Combine(parent.FullName, dirName));
+            if (!di.Exists)
+            {
+                di.Create();
+            }
+            _workingDir = new DirectoryInfoCache(null, di);
+            _workingDir.PossiblyMoveFromOutside = true;
+            _workingDir.InterestedFilePattern = interestedFilePattern;
+            _workingDir.SyncAllToFileSystem();
+            return _workingDir;
+        }
+
         private void toEPubButton_Click(object sender, EventArgs e)
         {
             OpenFileDialog fd = CreateIndexPickupDialog();
@@ -714,23 +732,22 @@ namespace WikipediaConv
                 // picked dump bzip file should place in the same folder.
 
                 var archiver = new EPubArchiver();
-                DumpFileToArchive(fd.FileNames, archiver.Archive, Dumper.CreateHtmlGenerater, ".epub", ".html");
+                var workingDir = GetWorkingDirectory(fd.FileNames[0], "ePub/", "*.html");
+                DumpFileToArchive(fd.FileNames, archiver.Archive, Dumper.CreateHtmlGenerater, workingDir, ".epub", ".html");
             }
 
         }
 
         private bool EnableAutoLogging = true;
 
-        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfo, PerfCounter, Dumper> createDumper, string outputExtension, string sourceExtension)
+        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfo, PerfCounter, Dumper> createDumper, DirectoryInfoCache workingDir, string outputExtension, string sourceExtension)
         {
             using (var uwAll = _counter.UsingWatch("All"))
             {
-                DirectoryInfo di = null;
                 foreach (string file in files)
                 {
                     bool isJapanese = IsJapanese(file);
-                    Dumper gen = createDumper(file, isJapanese, di, _counter);
-                    di = di ?? gen.OutputRoot;
+                    Dumper gen = createDumper(file, isJapanese, workingDir.Item, _counter);
                     gen.EnableAutoLogging = EnableAutoLogging;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
                     {
@@ -740,17 +757,14 @@ namespace WikipediaConv
                     }
                 }
 
-                if (di != null)
+                using (var uwArchive = _counter.UsingWatch("Archive"))
                 {
-                    using (var uwArchive = _counter.UsingWatch("Archive"))
+                    ArchiveTask archiveTask = new ArchiveTask(workingDir, archive, outputExtension);
+                    archiveTask.SourceExtension = sourceExtension;
+                    if (DialogResult.OK != new ProgressDialog(archiveTask, _counter).ShowDialog(this))
                     {
-                        ArchiveTask archiveTask = new ArchiveTask(di, archive, outputExtension);
-                        archiveTask.SourceExtension = sourceExtension;
-                        if (DialogResult.OK != new ProgressDialog(archiveTask, _counter).ShowDialog(this))
-                        {
-                            MessageBox.Show("generate epub cancelled");
-                            return;
-                        }
+                        MessageBox.Show("generate epub cancelled");
+                        return;
                     }
                 }
             }
@@ -770,7 +784,8 @@ namespace WikipediaConv
             if (fd.ShowDialog(this) == DialogResult.OK)
             {
                 var archiver = new PdfArchiver();
-                DumpFileToArchive(fd.FileNames, archiver.Archive, Dumper.CreateRawDumper, ".pdf", ".wiki");
+                var workingDir = GetWorkingDirectory(fd.FileNames[0], "pdf", "*.wiki");
+                DumpFileToArchive(fd.FileNames, archiver.Archive, Dumper.CreateRawDumper, workingDir,  ".pdf", ".wiki");
             }
         }
 

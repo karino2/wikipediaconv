@@ -12,26 +12,25 @@ namespace WikipediaConv
         DirectoryInfo _base;
         internal INotifyDecoder _notify;
         Func<PageInfo, string> _getContent;
-        public DumpAction(string bzipPath, string extension, string relativePath, Func<PageInfo, string> getContent)
+        public DumpAction(string bzipPath, string extension,  Func<PageInfo, string> getContent, DirectoryInfo outputPath)
         {
             _base = new FileInfo(bzipPath).Directory;
             Extension = extension;
             _getContent = getContent;
-            RelativePath = relativePath;
+            OutputRoot = outputPath;
         }
 
-        public static DumpAction CreateHtmlGeneraterAction(string bzipPath)
+        public static DumpAction CreateHtmlGeneraterAction(string bzipPath, DirectoryInfo result)
         {
-            return new DumpAction(bzipPath, ".html", "ePub/", (pi) => pi.GetFormattedContent());
+            return new DumpAction(bzipPath, ".html", (pi) => pi.GetFormattedContent(), result);
         }
 
-        public static DumpAction CreateRawDumpAction(string bzipPath)
+        public static DumpAction CreateRawDumpAction(string bzipPath, DirectoryInfo result)
         {
-            return new DumpAction(bzipPath, ".wiki", "pdf/", (pi) => pi.GetRawContent());
+            return new DumpAction(bzipPath, ".wiki", (pi) => pi.GetRawContent(), result);
         }
 
         public string Extension { get; set; }
-        public string RelativePath { get; set; }
         public void PreAction()
         {
         }
@@ -43,7 +42,8 @@ namespace WikipediaConv
 
         DirectoryInfo _workingFolder = null;
 
-        public DirectoryInfo OutputRoot
+        public DirectoryInfo OutputRoot { get; set; }
+            /*
         {
             get
             {
@@ -62,6 +62,7 @@ namespace WikipediaConv
                 _workingFolder = value;
             }
         }
+             * */
 
         public ILoadAndDecodeBlocker Decoder { get; set; }
         string _path;

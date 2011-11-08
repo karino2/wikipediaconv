@@ -172,6 +172,14 @@ namespace WikipediaConv
             }
             set { _fileCount = value; }
         }
+
+        void AddFileCount(int delta)
+        {
+            if (PossiblyMoveFromOutside)
+                return;
+            FileCount += delta;
+        }
+
         public string InterestedFilePattern { get; set; }
         public DirectoryInfoCache(DirectoryInfoCache parent, DirectoryInfo item)
         {
@@ -234,8 +242,8 @@ namespace WikipediaConv
         {
             // Debug.Assert(Array.Exists(Item.GetFiles(InterestedFilePattern), (x) => x == target));
             RawMoveTo(target, to.FullName, newName);
-            to.FileCount++;
-            FileCount--;
+            to.AddFileCount(1);
+            AddFileCount(-1);
         }
 
         public DirectoryInfoCache CreateSubdirectory(string name)
@@ -270,13 +278,6 @@ namespace WikipediaConv
             return Forest(dic);
         }
 
-
-
-        public static ForestNode<DirectoryInfoCache> Forest(DirectoryInfo cur)
-        {
-            var dic = new DirectoryInfoCache(null, cur);
-            return Forest(dic);
-        }
 
         public static ForestNode<DirectoryInfoCache> Forest(DirectoryInfoCache dic)
         {
