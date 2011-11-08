@@ -40,29 +40,8 @@ namespace WikipediaConv
             return OutputRoot;
         }
 
-        DirectoryInfo _workingFolder = null;
 
         public DirectoryInfo OutputRoot { get; set; }
-            /*
-        {
-            get
-            {
-                if (_workingFolder != null)
-                    return _workingFolder;
-                DirectoryInfo di = new DirectoryInfo(Path.Combine(_base.FullName, RelativePath));
-                if (!di.Exists)
-                {
-                    di.Create();
-                }
-                _workingFolder = di;
-                return _workingFolder;
-            }
-            set
-            {
-                _workingFolder = value;
-            }
-        }
-             * */
 
         public ILoadAndDecodeBlocker Decoder { get; set; }
         string _path;
