@@ -8,3 +8,4 @@ date, all, locate, load, dump, split, getyomi, other, comment
 2011/11/03 11:50, 24.07, 4.35, 5.11, 3.80, 6.75, 2.21, 0.00,  split cache
 2011/11/05 22:07, 25.48, 3.63, 7.84, 2.56, 7.91, 1.32, 0.00, split cache
 2011/11/08 00:25, 15.09, 1.58, 3.01, 3.52, 3.72, 2.19, 0.03, new directory info cache
+2011/11/08 12:36, 13.46, 1.67, 3.15, 3.26, 2.32, 1.83, 0.03, root filecount fixed.
