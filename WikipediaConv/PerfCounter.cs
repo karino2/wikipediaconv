@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace WikipediaConv
 {
@@ -52,6 +53,32 @@ namespace WikipediaConv
             foreach (var sw in _stopWatches.Values) { bldr.Append(sw.ToString()); }
             return bldr.ToString();
         }
+
+        private string _outputPath = null;
+        public void SetOutputFolder(string outputDir)
+        {
+            _outputPath = Path.Combine(outputDir, DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log");
+        }
+
+        public void DumpToLog()
+        {
+            try
+            {
+                using (var sw = new StreamWriter(_outputPath, true))
+                {
+                    sw.Write(ToString());
+                    sw.WriteLine("-----");
+                    sw.WriteLine();
+                    sw.WriteLine();
+                }
+            }
+            catch (Exception)
+            {
+                // this is just logging, not important task.
+            }
+            
+        }
+
     }
     public class StopWatch
     {

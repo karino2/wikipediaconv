@@ -332,33 +332,9 @@ namespace WikipediaConv
         {
             if (ActionCalledNum > _nextLogging)
             {
-                LogPerfCounter();
+                Counter.DumpToLog();
                 _nextLogging += _loggingInterval;
             }
-        }
-
-        private string _outputPath = null;
-        private void LogPerfCounter()
-        {
-            try
-            {
-                var outputDir = Path.GetDirectoryName(filePath);
-                if (_outputPath == null)
-                    _outputPath = Path.Combine(outputDir, DateTime.Now.ToString("yyyyMMddHHmmss") + ".log");
-                using (var file = new FileStream(_outputPath, FileMode.Append))
-                using (var sw = new StreamWriter(file))
-                {
-                    sw.Write(Counter.ToString());
-                    sw.WriteLine("-----");
-                    sw.WriteLine();
-                    sw.WriteLine();
-                }
-            }
-            catch (Exception)
-            {
-                // this is just logging, not important task.
-            }
-            
         }
 
         /// <summary>

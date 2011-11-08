@@ -741,6 +741,12 @@ namespace WikipediaConv
 
         private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfoCache, PerfCounter, Dumper> createDumper, DirectoryInfoCache workingDir, string outputExtension, string sourceExtension)
         {
+            if (EnableAutoLogging)
+            {
+                // use parent of pdf/epub folder.
+                _counter.SetOutputFolder(workingDir.Item.Parent.FullName);
+            }
+
             using (var uwAll = _counter.UsingWatch("All"))
             {
                 foreach (string file in files)
@@ -767,6 +773,8 @@ namespace WikipediaConv
                     }
                 }
             }
+            if (EnableAutoLogging)
+                _counter.DumpToLog();
         }
 
         private bool IsJapanese(string file)
