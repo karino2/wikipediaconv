@@ -180,6 +180,14 @@ namespace WikipediaConv
             FileCount += delta;
         }
 
+        public static DirectoryInfoCache CreateRoot(DirectoryInfo baseDi)
+        {
+            var baseDic = new DirectoryInfoCache(null, baseDi);
+            baseDic.PossiblyMoveFromOutside = true;
+            return baseDic;
+        }
+
+
         public string InterestedFilePattern { get; set; }
         public DirectoryInfoCache(DirectoryInfoCache parent, DirectoryInfo item)
         {
@@ -273,7 +281,7 @@ namespace WikipediaConv
 
         public static ForestNode<DirectoryInfoCache> ForestWithSync(DirectoryInfo cur)
         {
-            var dic = new DirectoryInfoCache(null, cur);
+            var dic = DirectoryInfoCache.CreateRoot(cur);
             dic.SyncAllToFileSystem();
             return Forest(dic);
         }
@@ -362,19 +370,38 @@ namespace WikipediaConv
 
         public Dictionary<string, bool> _dirty;
 
-        public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics)
+        public SplitFolder(DirectoryInfoCache baseDi, ISplitTactics tactics)
         {
+            _splitDictInit = true;
+            Base = baseDi;
+
             Abort = false;
             _tactics = tactics;
 
-            Base = new DirectoryInfoCache(null, baseDi);
-            Base.PossiblyMoveFromOutside = true;
-            InterestedFilePattern = "*.html";
 
             Current = Base;
             StartDirectory = Current;
             MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
             _dirty = new Dictionary<string, bool>();
+        }
+
+        public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics) : this(CreateDIC(baseDi), tactics)
+        {
+            _splitDictInit = false;
+        }
+
+        private static DirectoryInfoCache CreateDIC(DirectoryInfo baseDi)
+        {
+            var baseDic = CreateRoot(baseDi);
+            baseDic.InterestedFilePattern = "*.html";
+            return baseDic;
+        }
+
+        private static DirectoryInfoCache CreateRoot(DirectoryInfo baseDi)
+        {
+            var baseDic = new DirectoryInfoCache(null, baseDi);
+            baseDic.PossiblyMoveFromOutside = true;
+            return baseDic;
         }
 
         // Warning! call this function before creating sub node!
@@ -383,7 +410,7 @@ namespace WikipediaConv
         public bool Abort { get; set; }
 
         ForestWalker<DirectoryInfoCache> _walker;
-        private bool _splitDictInit = false;
+        private bool _splitDictInit;
 
         public void StartSplit()
         {

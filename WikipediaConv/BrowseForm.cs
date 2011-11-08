@@ -716,8 +716,7 @@ namespace WikipediaConv
             {
                 di.Create();
             }
-            _workingDir = new DirectoryInfoCache(null, di);
-            _workingDir.PossiblyMoveFromOutside = true;
+            _workingDir = DirectoryInfoCache.CreateRoot(di);
             _workingDir.InterestedFilePattern = interestedFilePattern;
             _workingDir.SyncAllToFileSystem();
             return _workingDir;
@@ -740,14 +739,14 @@ namespace WikipediaConv
 
         private bool EnableAutoLogging = true;
 
-        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfo, PerfCounter, Dumper> createDumper, DirectoryInfoCache workingDir, string outputExtension, string sourceExtension)
+        private void DumpFileToArchive(string[] files, Action<IEnumerable<FileInfo>, string> archive, Func<string, bool, DirectoryInfoCache, PerfCounter, Dumper> createDumper, DirectoryInfoCache workingDir, string outputExtension, string sourceExtension)
         {
             using (var uwAll = _counter.UsingWatch("All"))
             {
                 foreach (string file in files)
                 {
                     bool isJapanese = IsJapanese(file);
-                    Dumper gen = createDumper(file, isJapanese, workingDir.Item, _counter);
+                    Dumper gen = createDumper(file, isJapanese, workingDir, _counter);
                     gen.EnableAutoLogging = EnableAutoLogging;
                     if (DialogResult.OK != new ProgressDialog(gen.LongTask, _counter).ShowDialog(this))
                     {

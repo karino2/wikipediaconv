@@ -30,18 +30,18 @@ namespace WikipediaConv
             return new EnglishTactics();
         }
 
-        public static Dumper CreateHtmlGenerater(string bzipPath, bool isJapanese, DirectoryInfo result, PerfCounter counter)
+        public static Dumper CreateHtmlGenerater(string bzipPath, bool isJapanese, DirectoryInfoCache result, PerfCounter counter)
         {
-            DumpAction htmlAction = DumpAction.CreateHtmlGeneraterAction(bzipPath, result);
+            DumpAction htmlAction = DumpAction.CreateHtmlGeneraterAction(bzipPath, result.Item);
             var dumper = new Dumper(bzipPath, htmlAction, counter);
-            SplitFolder sf = CreateSplitFolder(isJapanese, dumper);
+            SplitFolder sf = CreateSplitFolder(isJapanese, result);
             PostCreate(dumper, isJapanese, sf);
             return dumper;
         }
 
-        private static SplitFolder CreateSplitFolder(bool isJapanese, Dumper dumper)
+        private static SplitFolder CreateSplitFolder(bool isJapanese, DirectoryInfoCache result)
         {
-            SplitFolder sf = new SplitFolder(dumper.OutputRoot, GetTactics(isJapanese));
+            SplitFolder sf = new SplitFolder(result, GetTactics(isJapanese));
             return sf;
         }
 
@@ -56,11 +56,11 @@ namespace WikipediaConv
              * */
         }
 
-        public static Dumper CreateRawDumper(string bzipPath, bool isJapanese, DirectoryInfo result, PerfCounter counter)
+        public static Dumper CreateRawDumper(string bzipPath, bool isJapanese, DirectoryInfoCache result, PerfCounter counter)
         {
-            DumpAction rawDump = DumpAction.CreateRawDumpAction(bzipPath, result);
+            DumpAction rawDump = DumpAction.CreateRawDumpAction(bzipPath, result.Item);
             Dumper dumper =  new Dumper(bzipPath, rawDump, counter);
-            SplitFolder sf = CreateSplitFolder(isJapanese, dumper);
+            SplitFolder sf = CreateSplitFolder(isJapanese, result);
             // not DRY!
             sf.InterestedFilePattern = "*.wiki";
             PostCreate(dumper, isJapanese, sf);

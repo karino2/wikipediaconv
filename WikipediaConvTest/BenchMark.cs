@@ -39,13 +39,18 @@ namespace WikipediaConvTest
             var bzipPath = benchDir + JA_HEAD_NAME;
             PerfCounter counter = new PerfCounter();
             counter.Start("AllBench");
-            var dumper = Dumper.CreateRawDumper(bzipPath, true, outputDir, counter);
+
+            var outputDirDIC = DirectoryInfoCache.CreateRoot(outputDir);
+            outputDirDIC.InterestedFilePattern = "*.wiki";
+            outputDirDIC.SyncAllToFileSystem();
+
+            var dumper = Dumper.CreateRawDumper(bzipPath, true, outputDirDIC, counter);
             // simulate split folder for large data
             SetupParameterForBenchMark(dumper);
             dumper._bzipReader.DecodeAsync();
 
             bzipPath = benchDir + "jatail.xml.bz2";
-            dumper = Dumper.CreateRawDumper(bzipPath, true, outputDir, counter);
+            dumper = Dumper.CreateRawDumper(bzipPath, true, outputDirDIC, counter);
             SetupParameterForBenchMark(dumper);
             dumper._bzipReader.DecodeAsync();
 
