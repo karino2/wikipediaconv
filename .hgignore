@@ -1,0 +1,11 @@
+syntax: glob
+EPubLib/obj/
+EPubLib/bin/
+Lucene.Net/bin/
+Lucene.Net/obj/
+MarkdownSharp/bin/
+MarkdownSharp/obj/
+MarkdownSharpTests/bin/
+MarkdownSharpTests/obj/
+Snowball.NET/bin/
+Snowball.NET/obj/
