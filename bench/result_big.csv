@@ -15,3 +15,4 @@ date, all, locate, load, dump, split, getyomi, other, comment
 2011/11/08 00:31, 92.79, 11.47, 36.02, 12.61, 20.65, 7.34, 0.00, new directory info cache
 2011/11/08 00:33, 77.96, 10.61, 37.91, 6.15, 10.22, 8.13, 0.00,  new di cache again
 2011/11/08 09:51, 44.00, 7.79, 19.50, 2.79, 5.44, 5.36, 0.00, root filecount increment fix
+2011/11/09 20:33, 88.71, 10.26, 42.73, 11.60, 12.41, 6.62, 0.00, coloring. slower...

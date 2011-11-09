@@ -1,5 +1,4 @@
-﻿#define DIRTY
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -245,7 +244,6 @@ namespace WikipediaConv
                 FileCount = Item.EnumerateFiles(InterestedFilePattern).Count();
         }
 
-
         public void MoveTo(FileInfo target, DirectoryInfoCache to, string newName)
         {
             // Debug.Assert(Array.Exists(Item.GetFiles(InterestedFilePattern), (x) => x == target));
@@ -339,10 +337,15 @@ namespace WikipediaConv
 
         internal DirectoryInfoCache EnsureSubdirectory(string relativeSub)
         {
-            var sub = Children.Find((di) => Path.Combine(FullName, relativeSub) == di.FullName);
+            var sub = FindChildren(relativeSub);
             if (sub != null)
                 return sub;
             return CreateSubdirectory(relativeSub);
+        }
+
+        public DirectoryInfoCache FindChildren(string relativeSub)
+        {
+            return Children.Find((di) => Path.Combine(FullName, relativeSub) == di.FullName);
         }
     }
 
@@ -368,7 +371,14 @@ namespace WikipediaConv
 
         public DirectoryInfoCache StartDirectory { get; set; }
 
-        public Dictionary<string, bool> _dirty;
+        public enum Dirtiness
+        {
+            White,
+            Gray, // has black decendant
+            Black
+        }
+
+        Dictionary<string, Dirtiness> _dirty;
 
         public SplitFolder(DirectoryInfoCache baseDi, ISplitTactics tactics)
         {
@@ -382,7 +392,59 @@ namespace WikipediaConv
             Current = Base;
             StartDirectory = Current;
             MaxFileNum = WikipediaConv.Properties.Settings.Default.OneFolderMaxFileNum;
-            _dirty = new Dictionary<string, bool>();
+            _dirty = new Dictionary<string, Dirtiness>();
+        }
+
+        public Dirtiness GetDirtiness(string path)
+        {
+            if (_dirty.ContainsKey(path))
+                return _dirty[path];
+            return Dirtiness.White;
+        }
+
+        public bool DirtierThanOrEqualGray(string path)
+        {
+            var dt = GetDirtiness(path);
+            return dt == Dirtiness.Black || dt == Dirtiness.Gray;
+        }
+
+        public bool IsBlack(string path)
+        {
+            return Dirtiness.Black == GetDirtiness(path);
+        }
+
+        public bool IsGray(string path)
+        {
+            return Dirtiness.Gray == GetDirtiness(path);
+        }
+
+        public bool IsWhite(string path)
+        {
+            return Dirtiness.White == GetDirtiness(path);
+        }
+
+        public void WriteGray(string path)
+        {
+            WriteDirty(path, Dirtiness.Gray);
+        }
+
+        public void WriteBlack(string path)
+        {
+            WriteDirty(path, Dirtiness.Black);
+        }
+
+        internal void WriteDirty(string path, Dirtiness color)
+        {
+            var cur = GetDirtiness(path);
+            if (cur == Dirtiness.Black)
+                return;
+            // color is more dirty
+            if (cur == Dirtiness.White ||
+                (color == Dirtiness.Black))
+            {
+                _dirty[path] = color;
+                return;
+            }
         }
 
         public SplitFolder(DirectoryInfo baseDi, ISplitTactics tactics) : this(CreateDIC(baseDi), tactics)
@@ -418,8 +480,10 @@ namespace WikipediaConv
             Current = StartDirectory;
             var root = DirectoryInfoCache.Forest(StartDirectory);
             _walker = root.Walker;
+
             _dirty.Clear();
-            SetDirty(StartDirectory.Item.FullName);
+            WriteBlack(StartDirectory.FullName);
+
             SyncDirectoryInfoCacheToFileSystem();
         }
 
@@ -430,11 +494,6 @@ namespace WikipediaConv
                 return;
             _splitDictInit = true;
             StartDirectory.SyncAllToFileSystem();
-        }
-
-        void SetDirty(string fullName)
-        {
-            _dirty[fullName] = true;
         }
 
         public bool IsRunning
@@ -452,13 +511,16 @@ namespace WikipediaConv
             var node = _walker.Current;
             if (node.CurrentEdge == ForestNode<DirectoryInfoCache>.Edge.Trailing)
                 return; // continue;
-#if DIRTY
-            if(!IsDirty(node.Element.Item.FullName))
+            if (IsWhite(node.Element.FullName))
             {
                 _walker.SkipChildren();
                 return; // continue;
             }
-#endif
+            if (IsGray(node.Element.FullName))
+            {
+                return; // continue;
+            }
+
             Current = node.Element;
             bool needToWalkDown = false;
             if (AlreadySplited || TooMuchFile)
@@ -472,10 +534,6 @@ namespace WikipediaConv
 
         }
 
-        private bool IsDirty(string fullName)
-        {
-            return _dirty.ContainsKey(fullName);
-        }
 
         public void Split()
         {
@@ -506,11 +564,15 @@ namespace WikipediaConv
 
         internal virtual void MoveTo(DirectoryInfoCache from, FileInfo target, string destRelative)
         {
-            var newName = target.Name;
             var destDIC = EnsureSubdirectory(from, destRelative);
-#if DIRTY
-            SetDirty(destDIC.FullName);
-#endif
+            WriteBlack(destDIC.FullName);
+            SafeMoveTo(from, target, destDIC);
+        }
+
+        // rename if name is dup
+        private static void SafeMoveTo(DirectoryInfoCache from, FileInfo target, DirectoryInfoCache destDIC)
+        {
+            var newName = target.Name;
             for (int i = 0; i < 10; i++)
             {
                 try
@@ -533,14 +595,40 @@ namespace WikipediaConv
             bool moveSomething = false;
             foreach (var file in FileEnum)
             {
-                string destRelative = GetMatchedSubcirectoryRelativePath(file);
-                if (!String.IsNullOrEmpty(destRelative))
+                DirectoryInfoCache dest = GetDest(file);
+                if (dest != null)
                 {
                     moveSomething = true;
-                    MoveTo(Current, file, destRelative);
+                    MoveToDirect(Current, file, dest);
+                }
+                else
+                {
+                    var destRelative = GetOneMatchedSubdirectoryRelativePath(file);
+                    if (!String.IsNullOrEmpty(destRelative))
+                    {
+                        moveSomething = true;
+                        MoveTo(Current, file, destRelative);
+                    }
                 }
             }
             return moveSomething;
+        }
+
+        internal void MoveToDirect(DirectoryInfoCache from, FileInfo file, DirectoryInfoCache dest)
+        {
+            WriteBlack(dest.FullName);
+            WriteGrayBetween(from, dest.Parent);
+            SafeMoveTo(from, file, dest);
+        }
+
+        // do not contain top.
+        internal void WriteGrayBetween(DirectoryInfoCache top, DirectoryInfoCache bottom)
+        {
+            while (bottom != top)
+            {
+                WriteGray(bottom.FullName);
+                bottom = bottom.Parent;
+            }
         }
 
         internal string FileNameHeadUntilCurrent
@@ -563,7 +651,37 @@ namespace WikipediaConv
             }
         }
 
-        internal string GetMatchedSubcirectoryRelativePath(FileInfo file)
+        internal DirectoryInfoCache LookupDest(string key, int curLen)
+        {
+            var cur = Current;
+            while(true)
+            {
+                string nextHead = _tactics.Lookup(key.Substring(curLen, 1));
+                var child = cur.FindChildren(nextHead);
+                if (child == null)
+                {
+                    if (cur == Current)
+                        return null;
+                    return cur;
+                }
+                cur = child;
+                curLen++;
+                if (key.Length == curLen)
+                    return cur;
+            }
+        }
+
+        internal DirectoryInfoCache GetDest(FileInfo file)
+        {
+            string untilCur = FileNameHeadUntilCurrent;
+            string key = FileNameToSortKey(file);
+            if (key.Length == untilCur.Length)
+                return null;
+            return LookupDest(key, untilCur.Length);
+        }
+
+
+        internal string GetOneMatchedSubdirectoryRelativePath(FileInfo file)
         {
             string untilCur = FileNameHeadUntilCurrent;
             string key = FileNameToSortKey(file);
@@ -574,7 +692,7 @@ namespace WikipediaConv
 
         internal string GetMatchedSubdirectoryPath(FileInfo file)
         {
-            var relative = GetMatchedSubcirectoryRelativePath(file);
+            var relative = GetOneMatchedSubdirectoryRelativePath(file);
             if(String.IsNullOrEmpty(relative))
                 return Current.Item.FullName;
             return Path.Combine(Current.Item.FullName, relative);

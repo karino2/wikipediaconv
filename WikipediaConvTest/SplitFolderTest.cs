@@ -664,11 +664,21 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
             return sf;
         }
 
+        SplitFolder CreateSplitFolder(DirectoryInfoCache baseDIC, DirectoryInfoCache curDIC, ISplitTactics tactics)
+        {
+            var sf = new SplitFolder(baseDIC, tactics);
+            sf.Current = curDIC;
+            return sf;
+        }
+
         private static DirectoryInfoCache SetupDICParent(DirectoryInfoCache baseDIC, DirectoryInfoCache cur)
         {
             while (baseDIC != cur)
             {
-                cur.Parent = new DirectoryInfoCache(null, cur.Item.Parent);
+                var parentCand = new DirectoryInfoCache(null, cur.Item.Parent);
+                if (baseDIC.FullName == parentCand.FullName)
+                    parentCand = baseDIC;
+                cur.Parent = parentCand;
                 cur.Parent.Children.Add(cur);
                 cur = cur.Parent;
             }
@@ -886,6 +896,183 @@ The closed form (<code>Unicode|""?""</code>), which is related with the lowercas
         private static void VerifyFileNameToSortKey(string input, string expected)
         {
             VerifyFileNameToSortKeyGeneric(input, expected, false);
+        }
+
+        [Test]
+        public void TestLookupDest()
+        {
+            var root = CreateDIC("C:\\hoge\\pdf");
+            var c = CreateDIC(root, "C:\\hoge\\pdf\\c");
+            var b = CreateDIC(c, "C:\\hoge\\pdf\\c\\b");
+
+            var split = CreateSplitFolderForEnglish(root, root);
+            var actual = split.LookupDest("cbaa", 0);
+
+            Assert.AreEqual(b, actual);
+        }
+
+        [Test]
+        public void TestLookupDest_DestIsCurrrent_ShouldReturnNull()
+        {
+            var root = CreateDIC("C:\\hoge\\pdf");
+            var c = CreateDIC(root, "C:\\hoge\\pdf\\c");
+            var b = CreateDIC(c, "C:\\hoge\\pdf\\c\\b");
+
+            var split = CreateSplitFolderForEnglish(root, c);
+            var actual = split.LookupDest("cbaa", 0);
+
+            Assert.AreEqual(null, actual);
+        }
+
+        [Test]
+        public void TestWriteDirty_DefaultWhite()
+        {
+            var path = "C:\\hoge\\ika";
+
+            var split = CreateDefaultSplitFolder();
+
+            Assert.True(split.IsWhite(path));
+            Assert.False(split.IsBlack(path));
+            Assert.False(split.IsGray(path));
+        }
+
+        [Test]
+        public void TestWriteDirty_WriteBlack_ReturnBlack()
+        {
+            var path = "C:\\hoge\\ika";
+
+            var split = CreateDefaultSplitFolder();
+            split.WriteBlack(path);
+
+            Assert.True(split.IsBlack(path));
+            Assert.False(split.IsWhite(path));
+            Assert.False(split.IsGray(path));
+        }
+
+        [Test]
+        public void TestWriteDirty_WriteGray_ReturnGray()
+        {
+            var path = "C:\\hoge\\ika";
+
+            var split = CreateDefaultSplitFolder();
+            split.WriteGray(path);
+
+            Assert.True(split.IsGray(path));
+            Assert.False(split.IsBlack(path));
+            Assert.False(split.IsWhite(path));
+        }
+
+        [Test]
+        public void TestWriteDirty_WriteGrayAfterBlack_ReturnBlack()
+        {
+            var path = "C:\\hoge\\ika";
+
+            var split = CreateDefaultSplitFolder();
+            split.WriteBlack(path);
+            split.WriteGray(path);
+
+            Assert.True(split.IsBlack(path));
+        }
+
+        [Test]
+        public void TestWriteDirty_WriteBlackAfterGray_ReturnBlack()
+        {
+            var path = "C:\\hoge\\ika";
+
+            var split = CreateDefaultSplitFolder();
+            split.WriteGray(path);
+            split.WriteBlack(path);
+
+            Assert.True(split.IsBlack(path));
+        }
+
+        [Test]
+        public void TestWriteGrayBetween()
+        {
+            var root = CreateDIC("C:\\hoge\\pdf");
+            var c = CreateDIC(root, "C:\\hoge\\pdf\\c");
+            var b = CreateDIC(c, "C:\\hoge\\pdf\\c\\b");
+            var a = CreateDIC(b, "C:\\hoge\\pdf\\c\\b\\a");
+            var z = CreateDIC(a, "C:\\hoge\\pdf\\c\\b\\a\\z");
+            var y = CreateDIC(z, "C:\\hoge\\pdf\\c\\b\\a\\z\\y");
+
+            var split = CreateSplitFolderForEnglish(root, c);
+            split.WriteGrayBetween(b, z);
+
+            Assert.IsTrue(split.IsWhite(c.FullName));
+            // do not contain top.
+            Assert.IsTrue(split.IsWhite(b.FullName));
+
+            Assert.IsTrue(split.IsGray(a.FullName));
+            Assert.IsTrue(split.IsGray(z.FullName));
+            Assert.IsTrue(split.IsWhite(y.FullName));
+        }
+
+        [Test]
+        public void TestWriteGrayBetween_topEqBottom_DoNothing()
+        {
+            var root = CreateDIC("C:\\hoge\\pdf");
+            var c = CreateDIC(root, "C:\\hoge\\pdf\\c");
+            var b = CreateDIC(c, "C:\\hoge\\pdf\\c\\b");
+            var a = CreateDIC(b, "C:\\hoge\\pdf\\c\\b\\a");
+
+            var split = CreateSplitFolderForEnglish(root, c);
+            split.WriteGrayBetween(b, b);
+
+            Assert.IsTrue(split.IsWhite(c.FullName));
+            Assert.IsTrue(split.IsWhite(b.FullName));
+            Assert.IsTrue(split.IsWhite(a.FullName));
+        }
+
+        [Test]
+        public void TestMoveToDirect()
+        {
+            var root = CreateDICT("C:\\hoge\\pdf");
+            var c = CreateDICT(root, "C:\\hoge\\pdf\\c");
+            var b = CreateDICT(c, "C:\\hoge\\pdf\\c\\b");
+            var a = CreateDICT(b, "C:\\hoge\\pdf\\c\\b\\a");
+            var z = CreateDICT(a, "C:\\hoge\\pdf\\c\\b\\a\\z");
+            var y = CreateDICT(z, "C:\\hoge\\pdf\\c\\b\\a\\z\\y");
+
+            var file = new FileInfo("C:\\hoge\\pdf\\c\\dummy.txt");
+            c.FileCount++;
+
+            var split = CreateSplitFolderForEnglish(root, c);
+            split.MoveToDirect(c, file, z);
+
+            var movedInfo = c.MovedFileInfos[file];
+            Assert.AreEqual(movedInfo.DestPath, z.FullName);
+            Assert.AreEqual(movedInfo.NewName, "dummy.txt");
+
+            Assert.True(split.IsWhite(root.FullName));
+            Assert.True(split.IsWhite(c.FullName));
+            Assert.True(split.IsGray(b.FullName));
+            Assert.True(split.IsGray(a.FullName));
+            Assert.True(split.IsBlack(z.FullName));
+            Assert.True(split.IsWhite(y.FullName));
+
+        }
+
+        public static DirectoryInfoCacheForTest CreateDICT(DirectoryInfoCacheForTest parent, string path)
+        {
+            return DirectoryInfoCacheTest.CreateDICForTest(parent, new DirectoryInfo(path));
+        }
+
+        public static DirectoryInfoCacheForTest CreateDICT(string path)
+        {
+            return DirectoryInfoCacheTest.CreateDICForTest(null, new DirectoryInfo(path));
+        }
+
+
+        private static SplitFolder CreateDefaultSplitFolder()
+        {
+            var split = new SplitFolder(new DirectoryInfo("C:\\hoge"));
+            return split;
+        }
+
+        private SplitFolder CreateSplitFolderForEnglish(DirectoryInfoCache root, DirectoryInfoCache c)
+        {
+            return CreateSplitFolder(root, c, new EnglishTactics());
         }
 
         // below here is not test, some experiment.
