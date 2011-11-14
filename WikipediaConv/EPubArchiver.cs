@@ -16,27 +16,35 @@ namespace WikipediaConv
             int chapterNumber = 1;
             foreach (var file in files)
             {
-                using (StreamReader sr = new StreamReader(file.FullName, System.Text.Encoding.UTF8))
+                try
                 {
-                    string contents = sr.ReadToEnd();
-                    string title = GetTitle(contents);
-                    // For redirect case.
-                    title = title == "" ? Path.GetFileNameWithoutExtension(file.Name) : title;
-                    Chapter chapter1 = new Chapter()
+                    using (StreamReader sr = new StreamReader(file.FullName, System.Text.Encoding.UTF8))
                     {
-                        Title = title,
+                        string contents = sr.ReadToEnd();
+                        string title = GetTitle(contents);
+                        // For redirect case.
+                        title = title == "" ? Path.GetFileNameWithoutExtension(file.Name) : title;
+                        Chapter chapter1 = new Chapter()
+                        {
+                            Title = title,
 
-                        //You are responsible for setting chapter numbers appropriately, starting with 1.
-                        Number = chapterNumber,
+                            //You are responsible for setting chapter numbers appropriately, starting with 1.
+                            Number = chapterNumber,
 
-                        //Be sure your Content is XHTML 1.1 compliant!
-                        Content = @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.1//EN"" ""http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"">
-" + contents
-                    };
-                    book.FileItems.Add(chapter1);
+                            //Be sure your Content is XHTML 1.1 compliant!
+                            Content = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    <!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.1//EN"" ""http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"">
+    " + contents
+                        };
+                        book.FileItems.Add(chapter1);
+                    }
+                    chapterNumber++;
                 }
-                chapterNumber++;
+                catch (FileNotFoundException)
+                {
+                    // in some Greeth filename, StreamReader return file not found exception.
+                    // Just ignore it.
+                }
             }
             book.Save(epubPath);
         }
