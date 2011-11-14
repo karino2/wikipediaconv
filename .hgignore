@@ -9,3 +9,14 @@ MarkdownSharpTests/bin/
 MarkdownSharpTests/obj/
 Snowball.NET/bin/
 Snowball.NET/obj/
+itextsharp/obj/
+itextsharp/bin/
+test_tmp_result_org
+WikipediaConvTest/obj
+WikipediaConvTest/bin/
+WikipediaConv/obj/
+WikipediaConv/bin/
+WikipediaConv.suo
+Snowball.NET/Snowball.Net.xml
+bench/resulttmp.csv
+bench/jahead_10M.xml.bz2

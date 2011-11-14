@@ -29,39 +29,55 @@ namespace WikipediaConv
             doc.Open();
             foreach (var file in files)
             {
-                using (StreamReader sr = new StreamReader(file.FullName))
+                try
                 {
-                    string contents = sr.ReadToEnd();
-                    /*
-                    string title = GetTitle(contents);
-                    // For redirect case.
-                    title = title == "" ? Path.GetFileNameWithoutExtension(file.Name) : title;
-                     * */
-                    string title = GetTitleFromFilePath(file.Name);
-
-                    Chapter chapter1 = new Chapter(new Paragraph(title, _font), 1 /* chapterNumber */);
-
-                    /*
-
-                    var lists = HTMLWorker.ParseToList(new StringReader(contents), new StyleSheet());
-                    lists.All((e) => chapter1.Add(e));
-                     * */
-                    chapter1.Add(new Paragraph(contents, _font));
-                    try
+                    using (StreamReader sr = new StreamReader(file.FullName))
                     {
-                        doc.Add(chapter1);
+                        string contents = sr.ReadToEnd();
+                        /*
+                        string title = GetTitle(contents);
+                        // For redirect case.
+                        title = title == "" ? Path.GetFileNameWithoutExtension(file.Name) : title;
+                         * */
+                        string title = GetTitleFromFilePath(file.Name);
+
+                        Chapter chapter1 = new Chapter(new Paragraph(title, _font), 1 /* chapterNumber */);
+
+                        /*
+
+                        var lists = HTMLWorker.ParseToList(new StringReader(contents), new StyleSheet());
+                        lists.All((e) => chapter1.Add(e));
+                         * */
+                        chapter1.Add(new Paragraph(contents, _font));
+                        try
+                        {
+                            doc.Add(chapter1);
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            //used unknown font. 
+                            // just skip.
+                            continue;
+                        }
+
                     }
-                    catch (IndexOutOfRangeException)
-                    {
-                        //used unknown font. 
-                        // just skip.
-                        continue;
-                    }
-                    
+                    chapterNumber++;
                 }
-                chapterNumber++;
+                catch (FileNotFoundException)
+                {
+                    // in some Greeth filename, StreamReader return file not found exception.
+                    // Just ignore it.
+                }
             }
-            doc.Close();
+            try
+            {
+                doc.Close();
+            }
+            catch (IOException)
+            {
+                // if nothing add, close return IOException.
+                // this is FileNotFoundException case only and just ignore it.
+            }
         }
 
         private string GetTitleFromFilePath(string p)
