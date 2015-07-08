@@ -1,6 +1,9 @@
 # wikipediaconv
 Automatically exported from code.google.com/p/wikipediaconv
 
+This project is obsolete.
+
+# Summary
 Convert Wikipedia dump data http://dumps.wikimedia.org/ to multiple epubs.
 
 # How to use
@@ -9,5 +12,5 @@ Convert Wikipedia dump data http://dumps.wikimedia.org/ to multiple epubs.
 + Launch WikipediaConv?.exe
 + press pdf button (or ePub), then select dump file
 
-# other
+# Other
 This project is used code http://code.google.com/p/bzreader/ and http://epublib.codeplex.com/SourceControl/list/changesets
